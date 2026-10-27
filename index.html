@@ -1,0 +1,1862 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S&amp;C Extraction Tool</title>
+<style>
+:root{
+  --navy:#1F3864; --blue:#2E75B6; --orange:#ED7D31; --bg:#f4f6fa; --card:#fff;
+  --line:#dde2ea; --text:#1d2433; --muted:#667085; --ok:#2e7d32; --bad:#c0392b; --warn:#b26a00;
+}
+*{box-sizing:border-box}
+body{margin:0;font:14px/1.45 -apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:var(--text);background:var(--bg);padding-bottom:84px}
+header{background:var(--navy);color:#fff;padding:18px 28px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+header h1{margin:0;font-size:20px;font-weight:650}
+header p{margin:2px 0 0;font-size:12.5px;opacity:.8}
+#engine-status{font-size:12px;padding:5px 12px;border-radius:999px;background:rgba(255,255,255,.15)}
+#engine-status.ready{background:#2e7d32}
+#engine-status.err{background:#c0392b}
+main{max-width:1320px;margin:0 auto;padding:22px 20px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:18px 20px;margin-bottom:18px}
+.card h2{margin:0 0 4px;font-size:15px;color:var(--navy)}
+.card h2 .n{display:inline-block;width:22px;height:22px;line-height:22px;text-align:center;border-radius:50%;background:var(--navy);color:#fff;font-size:12px;margin-right:8px}
+.sub{color:var(--muted);font-size:12.5px;margin:0 0 12px}
+#drop{border:2px dashed #b8c2d4;border-radius:10px;padding:26px;text-align:center;color:var(--muted);cursor:pointer;background:#fafbfe;transition:.15s}
+#drop.over{border-color:var(--blue);background:#eef5fc;color:var(--blue)}
+#drop b{color:var(--navy)}
+.files{display:flex;flex-direction:column;gap:6px;margin-top:12px}
+.file{display:flex;align-items:center;gap:10px;flex-wrap:wrap;border:1px solid var(--line);border-radius:8px;padding:7px 12px;background:#fafbfe}
+.file .nm{font-weight:600}
+.file .x{margin-left:auto;border:0;background:none;color:var(--muted);cursor:pointer;font-size:16px}
+.chip{display:inline-block;padding:2px 9px;border-radius:999px;background:#e8eef8;color:var(--navy);font-size:12px}
+.warn{color:var(--warn);font-size:12px}
+.err{color:var(--bad);font-size:12.5px}
+.grid{display:grid;gap:14px 22px;grid-template-columns:repeat(auto-fit,minmax(210px,1fr))}
+label.f{display:flex;flex-direction:column;gap:4px;font-size:12.5px;font-weight:600;color:#344054}
+label.f small{font-weight:400;color:var(--muted)}
+input[type=number],select{font:inherit;padding:8px 10px;border:1px solid #c5ccd8;border-radius:7px;background:#fff;width:100%}
+input[type=number]:focus,select:focus{outline:2px solid #9cc3ea;border-color:var(--blue)}
+.req input{border-color:#e0a21b;background:#fffbf0}
+.req input.ok{border-color:#9ccf9f;background:#f4fbf4}
+.tag{font-size:10.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;padding:1px 7px;border-radius:4px;margin-left:6px}
+.tag.req{background:#fdecc8;color:#8a5a00}
+.tag.auto{background:#e3f1e4;color:#256b2a}
+.group-title{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin:14px 0 8px}
+.chips{display:flex;gap:7px;flex-wrap:wrap}
+.chips label{border:1px solid #c5ccd8;border-radius:999px;padding:4px 12px;cursor:pointer;user-select:none;font-size:13px;background:#fff}
+.chips label.on{background:var(--navy);color:#fff;border-color:var(--navy)}
+.chips input{display:none}
+details{margin-top:12px}
+summary{cursor:pointer;color:var(--blue);font-size:13px}
+.btn{font:inherit;border:1px solid #b9c3d3;background:#fff;border-radius:7px;padding:7px 13px;cursor:pointer;color:var(--navy);font-weight:600}
+.btn:hover{background:#eef2f8}
+.btn.primary{background:var(--navy);color:#fff;border-color:var(--navy)}
+.btn.primary:hover{background:#2a4a82}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.rule{background:#f1f5fb;border-radius:8px;padding:9px 12px;font-size:12.5px;margin-top:14px;color:#344054}
+#lock{display:none;text-align:center;padding:36px 16px;border:2px dashed #e0a21b;background:#fffbf0;border-radius:10px;color:#7a5200;margin-bottom:18px}
+#lock b{font-size:15px}
+.toolbar{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;margin-bottom:12px}
+.toolbar label.f{min-width:150px}
+.seg{display:inline-flex;border:1px solid #b9c3d3;border-radius:8px;overflow:hidden}
+.seg button{border:0;background:#fff;padding:8px 14px;cursor:pointer;font:inherit;color:var(--navy);font-weight:600}
+.seg button.on{background:var(--navy);color:#fff}
+.stats{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.stat{background:#f1f5fb;border-radius:8px;padding:7px 14px}
+.stat b{display:block;font-size:18px;color:var(--navy)}
+.stat span{font-size:11.5px;color:var(--muted)}
+.chartbox{position:relative;height:370px}
+.chartbox.small{height:270px;margin-top:14px}
+.hint{font-size:12px;color:var(--muted);margin-top:6px}
+.tablewrap{max-height:520px;overflow:auto;border:1px solid var(--line);border-radius:8px}
+table{border-collapse:collapse;width:100%;font-size:12.5px}
+th{position:sticky;top:0;background:var(--navy);color:#fff;text-align:right;padding:7px 9px;white-space:nowrap;z-index:1;font-weight:600}
+td{padding:5px 9px;text-align:right;border-bottom:1px solid #eef1f5;white-space:nowrap}
+th.l,td.l{text-align:left}
+th.c,td.c{text-align:center}
+tr.used td{background:var(--rowbg,#f4fbf4)}
+tr.rej td{background:#fdf5f2;color:#7b5b53}
+tr.man-out td{background:#f0f0f0;color:#777;text-decoration:line-through}
+tr.man-in td{background:#e8f3fd}
+tr.flash td{outline:2px solid var(--orange);outline-offset:-2px;animation:fl 1.6s}
+@keyframes fl{0%{background:#ffe3c2}100%{}}
+td.reason{text-align:left;white-space:normal;max-width:360px;font-size:12px}
+.dpos{color:var(--bad)} .dneg{color:var(--blue)}
+.sumtable td,.sumtable th{padding:6px 10px}
+.sumtable tr td{background:#fff}
+#bar{position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:1px solid var(--line);padding:12px 24px;display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;z-index:5}
+#bar .info{font-size:13px;color:#344054}
+.legend-dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:4px}
+details.nvessel{border:1px solid var(--line);border-radius:8px;margin-bottom:8px;padding:8px 12px;background:#fafbfe}
+details.nvessel summary{cursor:pointer;color:var(--navy);font-size:14px}
+.ngrid{display:grid;gap:18px;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));margin-top:8px}
+.ntbl{border-collapse:collapse;margin-bottom:8px}
+.ntbl th{position:static;background:#e8eef8;color:var(--navy);padding:5px 8px;text-align:left}
+.ntbl td{padding:3px 4px;border:0;background:none}
+.ntbl input{width:130px;font:inherit;padding:6px 8px;border:1px solid #c5ccd8;border-radius:6px}
+label.chk{display:flex;gap:8px;align-items:center;font-weight:600;color:var(--navy);cursor:pointer}
+@media (max-width:640px){main{padding:14px 10px}.chartbox{height:300px}}
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>S&amp;C Extraction Tool</h1>
+    <p>Speed &amp; Consumption · ME + AE + SOW + Mean Draft · runs entirely in your browser, files are never uploaded anywhere</p>
+  </div>
+  <div id="engine-status">Starting Python engine…</div>
+</header>
+
+<main>
+  <div id="engine-help" class="card" style="display:none;border-color:#c0392b;background:#fdf3f1"></div>
+  <!-- 1. Upload -->
+  <section class="card">
+    <h2><span class="n">1</span>Upload vessel daily data</h2>
+    <p class="sub">One or more Vessel Daily Detail Excel files (.xlsx). Every sheet with "Raw Detail" in its name is read. Several files for the same vessel are merged.</p>
+    <div id="drop"><b>Drop Excel files here</b> or click to browse
+      <input id="file" type="file" accept=".xlsx,.xlsm" multiple hidden>
+    </div>
+    <div class="files" id="files"></div>
+  </section>
+
+  <!-- 2. Filters -->
+  <section class="card" id="filters" style="display:none">
+    <h2><span class="n">2</span>Filters</h2>
+    <p class="sub">Wind and wave limits are not pre-filled, enter the limits you want to apply. Everything else is detected from your data and can be changed at any time; results update as you type.</p>
+
+    <div class="group-title">Weather <span class="tag req">you set these</span></div>
+    <div class="grid">
+      <label class="f req">Wind limit (kts)
+        <input id="wind" type="number" step="0.1" min="0" placeholder="e.g. enter kts">
+        <small>Rows with wind &ge; this value are rejected</small>
+      </label>
+      <label class="f req">Wave height limit (m)
+        <input id="wave" type="number" step="0.05" min="0" placeholder="e.g. enter metres">
+        <small>Rows with combined wave height &ge; this value are rejected</small>
+      </label>
+    </div>
+
+    <div class="group-title">Other filters <span class="tag auto">auto-assigned · editable</span></div>
+    <div class="grid">
+      <label class="f">Minimum duration (h)
+        <input id="mindur" type="number" step="0.5" min="0" value="12">
+        <small>Rows shorter than this are rejected</small>
+      </label>
+      <div class="f">
+        <span style="font-size:12.5px;font-weight:600;color:#344054">Loading condition</span>
+        <div class="chips" id="condchips" style="margin-top:4px">
+          <label class="on"><input type="checkbox" value="BALLAST" checked>BALLAST</label>
+          <label class="on"><input type="checkbox" value="LADEN" checked>LADEN</label>
+        </div>
+      </div>
+      <div class="f" style="grid-column:span 2">
+        <span style="font-size:12.5px;font-weight:600;color:#344054">Report types included <span style="font-weight:400;color:var(--muted)">(found in your files)</span></span>
+        <div class="chips" id="typechips" style="margin-top:4px"></div>
+      </div>
+    </div>
+
+    <details>
+      <summary>SnC table settings (speed grid and exponent)</summary>
+      <div class="grid" style="margin-top:10px">
+        <label class="f">Grid start (kts)<input id="snc-start" type="number" step="0.5" value="10"></label>
+        <label class="f">Grid end (kts)<input id="snc-end" type="number" step="0.5" value="14"></label>
+        <label class="f">Step (kts)<input id="snc-step" type="number" step="0.1" min="0.1" value="0.5"></label>
+        <label class="f">Speed-power exponent<input id="snc-exp" type="number" step="0.1" value="2.6"></label>
+      </div>
+    </details>
+
+    <div class="rule" id="rule">Enter wind and wave limits to continue.</div>
+    <div style="margin-top:12px"><button class="btn" id="resetFilters">Reset auto filters to defaults</button></div>
+  </section>
+
+  <div id="lock"><b>Waiting for your weather limits</b><br>Enter the wind (kts) and wave height (m) limits above to see results.</div>
+
+  <!-- 3. Review -->
+  <div id="workspace" style="display:none">
+    <section class="card" id="normcard">
+      <h2><span class="n">3</span>Normalise ME consumption (optional)</h2>
+      <p class="sub">Brings every row to the same displacement and the ordered speed:
+        ME/24h × (normalisation displacement ÷ row displacement)<sup>exp</sup> × (ordered speed ÷ SOW)<sup>exp</sup>.
+        Each vessel needs a small draft–displacement table (two points, ballast and laden, are enough; more points are more accurate) so every row's draft can be turned into a displacement,
+        plus the normalisation draft and displacement for ballast and for laden.</p>
+      <label class="chk"><input type="checkbox" id="normOn"> Normalise ME in the charts, tables and Excel output</label>
+      <div id="normBody" style="display:none">
+        <div class="grid" style="margin-top:12px">
+          <label class="f">Displacement exponent<input id="dexp" type="text" value="2/3"><small>Default 2/3 (from the Fuel Consumption Estimator)</small></label>
+          <label class="f">Speed exponent<input id="sexp" type="text" value="3"><small>Default 3</small></label>
+          <label class="f">SnC table basis<select id="normSnc">
+            <option value="1">Use normalised ME (ordered speed vs normalised ME)</option>
+            <option value="0">Keep actual SOW and ME</option></select></label>
+        </div>
+        <div id="normVessels" style="margin-top:14px"></div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2><span class="n">4</span>Review consumption</h2>
+      <p class="sub">Three separate graphs: ME consumption (MT/day), SOW against ordered speed, and mean draft. Every row that passed your filters is plotted against the benchmark average for its ordered speed.</p>
+
+      <div class="toolbar">
+        <label class="f">Vessel<select id="vessel"></select></label>
+        <label class="f">Condition<select id="condview">
+          <option value="ALL">Ballast + Laden</option><option value="BALLAST">Ballast only</option><option value="LADEN">Laden only</option></select></label>
+        <label class="f" id="mewrap" style="display:none">ME shown<select id="memode">
+          <option value="act">Actual ME</option><option value="norm">Normalised ME</option></select></label>
+        <div class="f"><span style="font-size:12.5px;font-weight:600;color:#344054">Chart view</span>
+          <div class="seg" id="viewseg"><button data-v="speed" class="on">By ordered speed</button><button data-v="date">By date</button></div>
+        </div>
+      </div>
+
+      <div class="stats" id="stats"></div>
+
+      <div class="chartbox"><canvas id="chartME"></canvas></div>
+      <div class="chartbox small"><canvas id="chartSOW"></canvas></div>
+      <div class="chartbox small"><canvas id="chartDraft"></canvas></div>
+      <div class="hint">Coloured dots = daily rows (blue ballast, orange laden). Each horizontal benchmark line is the average for one ordered speed and is coloured to match that speed's shade in the tables. Click a point to jump to its row · Shift+click to exclude / re-include · grey ✕ = rows you excluded.</div>
+    </section>
+
+    <section class="card">
+      <h2><span class="n">5</span>Select rows</h2>
+      <p class="sub">Tick = included in the averages and the Excel output. Untick any row to exclude it. You can also tick a row that the filters rejected to force it in (only if it has a valid duration and ordered speed).</p>
+      <div class="toolbar">
+        <label class="f">Show<select id="tshow">
+          <option value="pass">Rows that passed the filters</option>
+          <option value="rej">Rows rejected by the filters</option>
+          <option value="all">All rows</option></select></label>
+        <button class="btn" id="tickAll">Tick all shown</button>
+        <button class="btn" id="untickAll">Untick all shown</button>
+        <button class="btn" id="resetOv">Reset manual changes</button>
+      </div>
+      <div class="tablewrap"><table id="tbl"><thead></thead><tbody></tbody></table></div>
+      <div class="hint" id="tnote"></div>
+    </section>
+
+    <section class="card">
+      <h2>Averages for this vessel</h2>
+      <p class="sub">Updates live as you change filters or rows. These feed the Results and SnC sheets in the Excel output. Rows with fewer than 3 data points are shaded light red.</p>
+      <div class="toolbar">
+        <label class="f">Draft handling<select id="draftgrp">
+          <option value="avg">Average the drafts for each ordered speed</option>
+          <option value="split">Separate each ordered speed by unique draft</option></select></label>
+        <label class="f" id="dstepwrap" style="display:none">Draft grouping step (m)
+          <input id="dstep" type="number" step="0.05" min="0.01" value="0.1"><small>Drafts within one step count as the same draft</small></label>
+      </div>
+      <div class="tablewrap" style="max-height:340px"><table id="sum" class="sumtable"><thead></thead><tbody></tbody></table></div>
+    </section>
+  </div>
+</main>
+
+<div id="bar">
+  <div class="info" id="barinfo">Upload a file to begin.</div>
+  <button class="btn primary" id="download" disabled>Download Excel output</button>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/pyodide/v0.26.4/full/pyodide.js"></script>
+
+<script type="text/x-python" id="engine">
+"""
+S&C Extraction engine (browser build, runs in Pyodide).
+Logic, columns and Excel layout come from the original
+"S&C Extraction Tool - ME + AE + SOW + Mean Draft" script.
+Additions: parameterised filters, manual include/exclude overrides,
+JSON hooks for the UI, and a "Filter Settings" audit sheet.
+"""
+import io
+import re
+import json
+import base64
+import unicodedata
+from collections import defaultdict
+from datetime import datetime, date
+
+import openpyxl
+from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+from openpyxl.utils import get_column_letter
+from openpyxl.worksheet.table import Table, TableStyleInfo
+
+
+# ── Configuration ─────────────────────────────────────────────────────────────
+COL_SOG = 'Speed'
+COL_CURRENT = 'CurrentFactor'
+COL_DRAFT = 'Mean Draft'
+COL_DISP = 'Displacement'
+AT_SEA_TYPES = {'At Sea'}
+
+REQUIRED_COLS = [
+    'PositionReportType', 'IsLaden', 'Duration', 'OrderedSpeed',
+    'AnalysisWindKts', 'AnalysisCombinedWaveHeightM',
+]
+
+# ── Styles ────────────────────────────────────────────────────────────────────
+HDR_FONT = Font(name='Calibri', bold=True, color='FFFFFF', size=11)
+HDR_FILL = PatternFill('solid', fgColor='1F3864')
+BODY_FONT = Font(name='Calibri', size=10)
+BOLD_FONT = Font(name='Calibri', bold=True, size=10)
+PASS_FILL = PatternFill('solid', fgColor='E2EFDA')
+FAIL_FILL = PatternFill('solid', fgColor='FCE4D6')
+CENTER = Alignment(horizontal='center', vertical='center')
+LEFT = Alignment(horizontal='left', vertical='center', indent=1)
+RIGHT = Alignment(horizontal='right', vertical='center')
+THIN = Side(style='thin', color='BFBFBF')
+BORDER = Border(left=THIN, right=THIN, top=THIN, bottom=THIN)
+
+BLK_THIN = Side(style='thin', color='000000')
+SNC_BORDER = Border(left=BLK_THIN, right=BLK_THIN, top=BLK_THIN, bottom=BLK_THIN)
+YELLOW_FILL = PatternFill('solid', fgColor='FFFF00')
+GREY_FILL = PatternFill('solid', fgColor='BFBFBF')
+BALLAST_FILL = PatternFill('solid', fgColor='BDD7EE')
+LADEN_FILL = PatternFill('solid', fgColor='FFE699')
+LOW_N_FILL = PatternFill('solid', fgColor='FFC7CE')   # light red: fewer than 3 data points
+OK_N_FILL = PatternFill('solid', fgColor='C6EFCE')
+MIN_POINTS = 3
+
+# light shade per ordered speed (index = round(speed*2) mod 12, same rule as the web page)
+SPEED_HEX = ['FDE9D9', 'E2EFDA', 'DDEBF7', 'FFF2CC', 'EADCF4', 'D9F0EE',
+             'FCE4EC', 'EDEDED', 'E4F1C9', 'D6E4F5', 'FBE5C8', 'E8E1F7']
+
+
+def speed_fill(spd):
+    try:
+        idx = int(round(float(spd) * 2)) % 12
+    except (TypeError, ValueError):
+        return None
+    return PatternFill('solid', fgColor=SPEED_HEX[idx])
+
+
+# ── Helpers (unchanged from original) ─────────────────────────────────────────
+def sanitize_table_name(name: str) -> str:
+    name = unicodedata.normalize('NFKD', name).encode('ascii', 'ignore').decode()
+    name = re.sub(r'[^A-Za-z0-9_]', '_', name)
+    if name and name[0].isdigit():
+        name = '_' + name
+    return name[:255] or 'Table'
+
+
+def normalize_header(value) -> str:
+    if value is None:
+        return ''
+    value = str(value).replace('\xa0', ' ').replace('\n', ' ').replace('\r', ' ')
+    value = unicodedata.normalize('NFKC', value)
+    value = re.sub(r'\s+', ' ', value).strip()
+    return value.lower()
+
+
+def is_laden_flag(raw) -> bool:
+    if isinstance(raw, bool):
+        return raw
+    if isinstance(raw, str):
+        return raw.strip().upper() == 'TRUE'
+    return False
+
+
+def safe_float(value, missing_sentinel=None):
+    if value is None or value == '':
+        return missing_sentinel
+    try:
+        return float(value)
+    except (ValueError, TypeError):
+        return missing_sentinel
+
+
+def detect_data_start_row(ws) -> int:
+    row1 = [str(c.value).strip() if c.value else '' for c in ws[1]]
+    try:
+        i_rpt = row1.index('PositionReportType')
+    except ValueError:
+        return 7
+    all_types = AT_SEA_TYPES | {'In Port', 'Start Passage'}
+    for r in range(3, min(20, ws.max_row + 1)):
+        val = ws.cell(row=r, column=i_rpt + 1).value
+        if val in all_types:
+            return r
+    return 7
+
+
+def build_column_map(ws):
+    row1 = [c.value for c in ws[1]]
+    row2 = [c.value for c in ws[2]]
+    col_map = {}
+    prop_cols, gen_cols, boil_cols = [], [], []
+    for i, (h1, h2) in enumerate(zip(row1, row2)):
+        h1_raw = '' if h1 is None else str(h1).strip()
+        h1_norm = normalize_header(h1)
+        h2_norm = normalize_header(h2)
+        if h1_raw and h1_raw not in col_map:
+            col_map[h1_raw] = i
+        if h1_norm and h1_norm not in col_map:
+            col_map[h1_norm] = i
+        if h1_norm == normalize_header('Consumption'):
+            if h2_norm == normalize_header('PROP'):
+                prop_cols.append(i)
+            if h2_norm == normalize_header('GEN'):
+                gen_cols.append(i)
+            if h2_norm == normalize_header('BOIL'):
+                boil_cols.append(i)
+    return col_map, prop_cols, gen_cols, boil_cols
+
+
+def extract_vessel_name(sheet_name: str) -> str:
+    return re.sub(r'(?i)raw\s*detail\s*', '', sheet_name).strip()
+
+
+def fmt_ts(v):
+    if isinstance(v, datetime):
+        return v.strftime('%Y-%m-%d %H:%M')
+    if isinstance(v, date):
+        return v.strftime('%Y-%m-%d')
+    return '' if v is None else str(v)
+
+
+def ui_num(v):
+    """Wind / wave raw value -> number for the UI if possible, else text."""
+    f = safe_float(v)
+    if f is not None:
+        return f
+    return '' if v is None else str(v)
+
+
+# ── State ─────────────────────────────────────────────────────────────────────
+STATE = {'raw': [], 'last': None}
+
+
+def reset_all():
+    STATE['raw'] = []
+    STATE['last'] = None
+    return 'ok'
+
+
+def remove_file(display_name):
+    STATE['raw'] = [r for r in STATE['raw'] if r['file'] != display_name]
+    return 'ok'
+
+
+def meta():
+    vessels, types = [], []
+    for r in STATE['raw']:
+        if r['vessel'] not in vessels:
+            vessels.append(r['vessel'])
+        if r['rpt_type'] is not None and str(r['rpt_type']) not in types:
+            types.append(str(r['rpt_type']))
+    
+    # Extract auto draft-displacement profiles per vessel
+    hydro = {}
+    for v in vessels:
+        v_rows = [r for r in STATE['raw'] if r['vessel'] == v and (r['dur'] or 0) > 0]
+        # Prefer At Sea rows if present
+        sea_rows = [r for r in v_rows if str(r['rpt_type']) in AT_SEA_TYPES] or v_rows
+        
+        # Group by rounded draft (to 2 decimals)
+        by_draft = defaultdict(list)
+        b_drafts, l_drafts = [], []
+        b_disps, l_disps = [], []
+        for r in sea_rows:
+            d = r.get('draft')
+            w = r.get('disp')
+            if d is not None and d > 0:
+                dr = round(float(d), 2)
+                if w is not None and w > 0:
+                    by_draft[dr].append(float(w))
+                else:
+                    by_draft.setdefault(dr, [])
+                if r['cond'] == 'BALLAST':
+                    b_drafts.append(float(d))
+                    if w is not None and w > 0:
+                        b_disps.append(float(w))
+                else:
+                    l_drafts.append(float(d))
+                    if w is not None and w > 0:
+                        l_disps.append(float(w))
+        
+        sorted_drafts = sorted(by_draft.keys())
+        has_disp_col = any(len(ws) > 0 for ws in by_draft.values())
+        
+        # If there are many unique drafts without displacement, pick representative drafts
+        # (min, avg ballast, avg laden, max) or up to 8 evenly spaced unique drafts so we don't overwhelm the user
+        tbl = []
+        if has_disp_col:
+            # Include all unique drafts that have displacement, plus any missing ones
+            for dr in sorted_drafts:
+                ws = by_draft[dr]
+                avg_w = round(sum(ws) / len(ws), 1) if ws else ''
+                tbl.append({'d': dr, 'w': avg_w})
+        else:
+            if len(sorted_drafts) <= 8:
+                tbl = [{'d': dr, 'w': ''} for dr in sorted_drafts]
+            else:
+                # Pick key representative drafts (Min, Q1/Ballast avg, Median, Q3/Laden avg, Max)
+                picks = set()
+                picks.add(sorted_drafts[0])
+                picks.add(sorted_drafts[-1])
+                if b_drafts:
+                    picks.add(round(sum(b_drafts) / len(b_drafts), 2))
+                if l_drafts:
+                    picks.add(round(sum(l_drafts) / len(l_drafts), 2))
+                for idx in range(0, len(sorted_drafts), max(1, len(sorted_drafts) // 5)):
+                    picks.add(sorted_drafts[idx])
+                tbl = [{'d': dr, 'w': ''} for dr in sorted(picks)]
+        
+        b_avg_d = round(sum(b_drafts) / len(b_drafts), 2) if b_drafts else ''
+        l_avg_d = round(sum(l_drafts) / len(l_drafts), 2) if l_drafts else ''
+        b_avg_w = round(sum(b_disps) / len(b_disps), 1) if b_disps else ''
+        l_avg_w = round(sum(l_disps) / len(l_disps), 1) if l_disps else ''
+        
+        hydro[v] = {
+            'has_disp': has_disp_col,
+            'all_drafts': [{'d': dr, 'w': round(sum(by_draft[dr])/len(by_draft[dr]), 1) if by_draft[dr] else ''} for dr in sorted_drafts],
+            'tbl': tbl if tbl else [{'d': '', 'w': ''}, {'d': '', 'w': ''}],
+            'ballast': {'d': b_avg_d, 'w': b_avg_w},
+            'laden': {'d': l_avg_d, 'w': l_avg_w},
+        }
+    return json.dumps({'vessels': vessels, 'report_types': types, 'hydro': hydro})
+
+
+# ── Parsing (reads each file once; filters are applied later in run()) ────────
+def load_file(path, display_name):
+    out = {'file': display_name, 'vessels': [], 'warnings': [], 'rows': 0, 'error': None}
+    try:
+        wb = openpyxl.load_workbook(path, data_only=True)
+    except Exception as e:  # noqa
+        out['error'] = str(e)
+        return json.dumps(out)
+
+    STATE['raw'] = [r for r in STATE['raw'] if r['file'] != display_name]
+
+    for sheet_name in wb.sheetnames:
+        if 'raw detail' not in sheet_name.lower():
+            continue
+        ws = wb[sheet_name]
+        vessel = extract_vessel_name(sheet_name)
+        col_map, prop_cols, gen_cols, boil_cols = build_column_map(ws)
+
+        missing = [c for c in REQUIRED_COLS if c not in col_map]
+        if missing:
+            out['warnings'].append(f"{vessel}: skipped, missing columns {missing}")
+            continue
+
+        i_rpt = col_map.get('PositionReportType')
+        i_laden = col_map.get('IsLaden')
+        i_dur = col_map.get('Duration')
+        i_ospd = col_map.get('OrderedSpeed')
+        i_wind = col_map.get('AnalysisWindKts')
+        i_wave = col_map.get('AnalysisCombinedWaveHeightM')
+        i_time = col_map.get('Time', col_map.get('DateTime', None))
+        i_sog = col_map.get(COL_SOG, col_map.get(normalize_header(COL_SOG)))
+        i_curr = col_map.get(COL_CURRENT, col_map.get(normalize_header(COL_CURRENT)))
+        i_draft = col_map.get(COL_DRAFT,
+                  col_map.get(normalize_header(COL_DRAFT),
+                  col_map.get(normalize_header('MeanDraft'),
+                  col_map.get('draft'))))
+        i_disp = None
+        for cand in (COL_DISP, normalize_header(COL_DISP), 'displacement (mt)', 'displacement(mt)',
+                     'disp', 'disp (mt)', 'actual displacement', 'mean displacement'):
+            if cand in col_map:
+                i_disp = col_map[cand]
+                break
+        if i_disp is None:
+            for k_col, idx_col in col_map.items():
+                if 'displac' in str(k_col).lower():
+                    i_disp = idx_col
+                    break
+
+        if i_sog is None or i_curr is None:
+            out['warnings'].append(f"{vessel}: Speed / CurrentFactor header not found, SOW will be blank")
+        if i_draft is None:
+            out['warnings'].append(f"{vessel}: Mean Draft header not found")
+
+        data_start = detect_data_start_row(ws)
+        n = 0
+        for src_row_idx, row in enumerate(
+            ws.iter_rows(min_row=data_start, max_row=ws.max_row, values_only=True),
+            start=data_start
+        ):
+            if all(v is None or v == '' for v in row):
+                continue  # trailing blank rows
+
+            ord_spd = row[i_ospd]
+            sog_val = safe_float(row[i_sog], None) if i_sog is not None else None
+            curr_val = safe_float(row[i_curr], None) if i_curr is not None else None
+            sow_val = round(sog_val - curr_val, 2) if sog_val is not None and curr_val is not None else None
+            draft_val = safe_float(row[i_draft], None) if i_draft is not None else None
+            disp_val = safe_float(row[i_disp], None) if i_disp is not None else None
+
+            STATE['raw'].append({
+                'key': f"{display_name}|{vessel}|{src_row_idx}",
+                'file': display_name,
+                'vessel': vessel,
+                'src_row': src_row_idx,
+                'timestamp': row[i_time] if i_time is not None else '',
+                'rpt_type': row[i_rpt],
+                'cond': 'LADEN' if is_laden_flag(row[i_laden]) else 'BALLAST',
+                'dur': safe_float(row[i_dur]),
+                'ord_raw': ord_spd,
+                'ord_num': safe_float(ord_spd),
+                'wind_raw': row[i_wind],
+                'wave_raw': row[i_wave],
+                'wind': safe_float(row[i_wind]),
+                'wave': safe_float(row[i_wave]),
+                'sog': sog_val,
+                'curr': curr_val,
+                'sow': sow_val,
+                'draft': draft_val,
+                'disp': disp_val,
+                'prop': sum(safe_float(row[c], 0.0) for c in prop_cols),
+                'gen': sum(safe_float(row[c], 0.0) for c in gen_cols),
+                'boil': sum(safe_float(row[c], 0.0) for c in boil_cols),
+            })
+            n += 1
+        out['rows'] += n
+        if n and vessel not in out['vessels']:
+            out['vessels'].append(vessel)
+
+    return json.dumps(out)
+
+
+# ── Filtering (same rules as the original script, limits now parameters) ─────
+def evaluate(r, p):
+    reasons = []
+    if str(r['rpt_type']) not in p['report_types']:
+        reasons.append(f"Report type '{r['rpt_type']}' not selected")
+
+    if r['cond'] not in p['conditions']:
+        reasons.append(f"Condition {r['cond']} not selected")
+
+    wind, wave = r['wind'], r['wave']
+    if wind is None:
+        reasons.append("Wind value missing or non-numeric")
+    elif wind >= p['wind']:
+        reasons.append(f"Wind {wind:.1f} kts >= {p['wind']:g} kts limit")
+
+    if wave is None:
+        reasons.append("Wave value missing or non-numeric")
+    elif wave >= p['wave']:
+        reasons.append(f"Wave {wave:.2f} m >= {p['wave']:g} m limit")
+
+    dur = r['dur']
+    if dur is None or dur <= 0:
+        reasons.append("Duration is 0 or blank")
+    elif dur < p['min_dur']:
+        reasons.append(f"Duration {dur:.1f} h < {p['min_dur']:g} h minimum")
+
+    if r['ord_num'] is None and not reasons:
+        reasons.append("OrderedSpeed is blank or non-numeric")
+    return reasons
+
+
+def parse_table(raw):
+    """[[draft, displacement], ...] -> sorted unique-draft list of (draft, disp)."""
+    out, seen = [], set()
+    for pair in sorted((float(a), float(b)) for a, b in (raw or [])
+                       if a is not None and b is not None and float(b) > 0):
+        if pair[0] not in seen:
+            out.append(pair)
+            seen.add(pair[0])
+    return out
+
+
+def interp_disp(tbl, draft):
+    """Piecewise-linear displacement for a draft; extrapolates from the end segments."""
+    if draft is None or len(tbl) < 2:
+        return None, ''
+    if draft < tbl[0][0]:
+        (d0, w0), (d1, w1), basis = tbl[0], tbl[1], 'extrapolated'
+    elif draft > tbl[-1][0]:
+        (d0, w0), (d1, w1), basis = tbl[-2], tbl[-1], 'extrapolated'
+    else:
+        basis = 'table'
+        for i in range(len(tbl) - 1):
+            if tbl[i][0] <= draft <= tbl[i + 1][0]:
+                (d0, w0), (d1, w1) = tbl[i], tbl[i + 1]
+                break
+    return w0 + (draft - d0) * (w1 - w0) / (d1 - d0), basis
+
+
+def run(params_json, overrides_json):
+    p = json.loads(params_json)
+    ov = json.loads(overrides_json or '{}')
+    p['report_types'] = set(p['report_types'])
+    p['conditions'] = set(p['conditions'])
+    split = bool(p.get('split_draft'))
+    step = float(p.get('draft_step') or 0.1)
+    if step <= 0:
+        step = 0.1
+
+    norm = p.get('norm') or {}
+    norm_on = bool(norm.get('enabled'))
+    dexp = float(norm.get('dexp') or 2 / 3)
+    sexp = float(norm.get('sexp') or 3)
+    nv = norm.get('vessels') or {}
+    tables = {v: parse_table((cfg or {}).get('table')) for v, cfg in nv.items()}
+
+    def norm_target(vessel, cond):
+        cfg = ((nv.get(vessel) or {}).get('ballast' if cond == 'BALLAST' else 'laden')) or {}
+        d = cfg.get('draft')
+        w = cfg.get('disp')
+        if w is None and d is not None:
+            w = interp_disp(tables.get(vessel, []), d)[0]
+        return d, w
+
+    def norm_row(r, base24):
+        """ME /24h normalised to the target displacement and the ordered speed."""
+        tb = tables.get(r['vessel'], [])
+        if r.get('disp') is not None and r.get('disp') > 0:
+            rd, basis = float(r['disp']), 'sheet'
+        else:
+            if len(tb) < 2:
+                return None, '', None, 'Enter displacement for the available drafts above'
+            rd, basis = interp_disp(tb, r['draft'])
+            if rd is None:
+                return None, '', None, 'No draft in row'
+        nd, nw = norm_target(r['vessel'], r['cond'])
+        if not nw:
+            return rd, basis, None, 'No normalisation condition'
+        if r['sow'] is None or r['sow'] <= 0:
+            return rd, basis, None, 'SOW missing'
+        if r['ord_num'] is None or base24 is None:
+            return rd, basis, None, 'Ordered speed / ME missing'
+        val = base24 * (nw / rd) ** dexp * (r['ord_num'] / r['sow']) ** sexp
+        return rd, basis, val, ''
+
+    def bucket(d):
+        if not split:
+            return None
+        if d is None:
+            return -1.0
+        return round(round(d / step) * step, 4)
+
+    detail_rows, ui_rows = [], []
+    groups = defaultdict(lambda: {
+        'rows': 0, 'dur_h': 0.0, 'prop': 0.0, 'gen': 0.0, 'boil': 0.0,
+        'prop_24h_sum': 0.0, 'gen_24h_sum': 0.0, 'boil_24h_sum': 0.0,
+        'sow_sum': 0.0, 'sow_n': 0, 'draft_sum': 0.0, 'draft_count': 0, 'gid': '',
+        'nme_sum': 0.0, 'nme_n': 0,
+    })
+    norm_rows = []
+
+    for r in STATE['raw']:
+        reasons = evaluate(r, p)
+        natural = 'USED' if not reasons else 'REJECTED'
+        b = bucket(r['draft'])
+        gb = 0.0 if b is None else b
+        gid = f"{r['vessel']}|{r['cond']}|{r['ord_num']}|{'' if b is None else b}"
+
+        dur = r['dur']
+        eligible = dur is not None and dur > 0 and r['ord_num'] is not None
+        o = ov.get(r['key'])
+
+        status, reason_list, override_txt, override = natural, reasons, '', ''
+        if o == 'out' and natural == 'USED':
+            status, reason_list = 'REJECTED', ['Manually excluded by user']
+            override_txt, override = 'Manually excluded', 'out'
+        elif o == 'in' and natural == 'REJECTED' and eligible:
+            status, reason_list = 'USED', []
+            override_txt = 'Manually included (filters said: ' + ' | '.join(reasons) + ')'
+            override = 'in'
+
+        used = status == 'USED'
+        prop, gen, boil = (r['prop'], r['gen'], r['boil']) if used else (0.0, 0.0, 0.0)
+        ok24 = used and dur and dur > 0
+        prop_24h = round(prop * 24 / dur, 3) if ok24 else ''
+        gen_24h = round(gen * 24 / dur, 3) if ok24 else ''
+        boil_24h = round(boil * 24 / dur, 3) if ok24 else ''
+        total_24h = round((prop + gen) * 24 / dur, 3) if ok24 else ''
+        sow_out = r['sow'] if r['sow'] is not None else ''
+
+        detail_rows.append({
+            'File': r['file'],
+            'Vessel': r['vessel'],
+            'Source Row': r['src_row'],
+            'Timestamp': r['timestamp'],
+            'Report Type': r['rpt_type'],
+            'Condition': r['cond'],
+            'Mean Draft (m)': round(r['draft'], 2) if r['draft'] is not None else '',
+            'Ordered Spd(kts)': r['ord_num'] if r['ord_num'] is not None else r['ord_raw'],
+            'SOG (kts)': round(r['sog'], 2) if r['sog'] is not None else '',
+            'Current Factor': round(r['curr'], 2) if r['curr'] is not None else '',
+            'SOW (kts)': sow_out,
+            'Duration (h)': round(dur or 0.0, 2),
+            'Wind Kts': r['wind_raw'],
+            'Wave M': r['wave_raw'],
+            'ME (MT)': round(prop, 3),
+            'AE (MT)': round(gen, 3),
+            'ME+AE (MT)': round(prop + gen, 3),
+            'ME /24h': prop_24h,
+            'AE /24h': gen_24h,
+            'ME+AE /24h': total_24h,
+            'BOIL (MT)': round(boil, 3),
+            'BOIL /24h': boil_24h,
+            'Status': status,
+            'Override': override_txt,
+            'Rejection Reason': ' | '.join(reason_list),
+        })
+
+        if used and dur and dur > 0:
+            g = groups[(r['vessel'], r['cond'], r['ord_num'], gb)]
+            g['gid'] = gid
+            g['rows'] += 1
+            g['dur_h'] += dur
+            if r['sow'] is not None:
+                g['sow_sum'] += r['sow']
+                g['sow_n'] += 1
+            if r['draft'] is not None:
+                g['draft_sum'] += r['draft']
+                g['draft_count'] += 1
+            g['prop'] += prop
+            g['gen'] += gen
+            g['boil'] += boil
+            g['prop_24h_sum'] += prop * 24 / dur
+            g['gen_24h_sum'] += gen * 24 / dur
+            g['boil_24h_sum'] += boil * 24 / dur
+
+        me24_plot = round(r['prop'] * 24 / dur, 3) if (dur and dur > 0) else None
+        rdisp = rbasis = nme = None
+        nnote = ''
+        if norm_on:
+            base24 = (r['prop'] * 24 / dur) if (dur and dur > 0) else None
+            rdisp, rbasis, nme, nnote = norm_row(r, base24)
+            if used and nme is not None:
+                g2 = groups[(r['vessel'], r['cond'], r['ord_num'], gb)]
+                g2['nme_sum'] += nme
+                g2['nme_n'] += 1
+                nd, nw = norm_target(r['vessel'], r['cond'])
+                norm_rows.append({
+                    'Vessel': r['vessel'], 'Condition': r['cond'], 'File': r['file'],
+                    'Source Row': r['src_row'], 'Timestamp': r['timestamp'],
+                    'Ordered': r['ord_num'], 'SOW': r['sow'], 'Draft': r['draft'],
+                    'RowDisp': rdisp, 'Basis': rbasis, 'ME24': base24,
+                    'NormDraft': nd, 'NormDisp': nw, 'Value': nme,
+                })
+        ui_rows.append({
+            'key': r['key'], 'file': r['file'], 'vessel': r['vessel'], 'row': r['src_row'],
+            'ts': fmt_ts(r['timestamp']), 'type': '' if r['rpt_type'] is None else str(r['rpt_type']),
+            'cond': r['cond'], 'ospd': r['ord_num'], 'sow': r['sow'], 'draft': r['draft'],
+            'dur': dur, 'wind': ui_num(r['wind_raw']), 'wave': ui_num(r['wave_raw']),
+            'me24': me24_plot, 'gid': gid if r['ord_num'] is not None else '', 'status': status, 'natural': natural, 'override': override,
+            'eligible': bool(eligible), 'reason': ' | '.join(reason_list),
+            'rdisp': round(rdisp, 0) if rdisp is not None else None, 'rbasis': rbasis,
+            'nme': round(nme, 3) if nme is not None else None, 'nnote': nnote,
+        })
+
+    summary_rows = []
+    for (vessel, condition, spd, gb), v in sorted(groups.items()):
+        n = v['rows']
+        avg_sow = v['sow_sum'] / v['sow_n'] if v['sow_n'] else None
+        avg_draft = v['draft_sum'] / v['draft_count'] if v['draft_count'] else None
+        a_prop = v['prop_24h_sum'] / n if n else 0
+        a_gen = v['gen_24h_sum'] / n if n else 0
+        a_boil = v['boil_24h_sum'] / n if n else 0
+        summary_rows.append({
+            'Vessel': vessel,
+            'Condition': condition,
+            'GID': v['gid'],
+            'Draft Group (m)': gb if (split and gb >= 0) else '',
+            'Avg Mean Draft (m)': round(avg_draft, 2) if avg_draft is not None else '',
+            'Ordered Spd(kts)': spd,
+            'Avg SOW (kts)': round(avg_sow, 2) if avg_sow is not None else 0,
+            'GW Days (rows)': n,
+            'Total Dur (h)': round(v['dur_h'], 2),
+            'ME (MT)': round(v['prop'], 2),
+            'AE (MT)': round(v['gen'], 2),
+            'Avg ME /24h (MT)': round(a_prop, 3),
+            'Avg AE /24h (MT)': round(a_gen, 3),
+            'Avg ME+AE /24h': round(a_prop + a_gen, 3),
+            'BOIL (MT)': round(v['boil'], 2),
+            'Avg BOIL /24h (MT)': round(a_boil, 3),
+            'Avg Norm ME /24h (MT)': round(v['nme_sum'] / v['nme_n'], 3) if v['nme_n'] else '',
+            'Norm Data pts': v['nme_n'],
+        })
+
+    avg_by_gid = {s['GID']: s['Avg ME /24h (MT)'] for s in summary_rows}
+    for u in ui_rows:
+        u['avg'] = avg_by_gid.get(u['gid'])
+
+    STATE['last'] = {
+        'params': p, 'overrides': ov, 'detail': detail_rows, 'summary': summary_rows,
+        'norm_rows': norm_rows, 'tables': tables,
+    }
+    return json.dumps({'rows': ui_rows, 'summary': summary_rows})
+
+
+# ── Excel output (original layout + parameterised text / SnC grid) ───────────
+def style_header(ws, row_num, num_cols):
+    for c in range(1, num_cols + 1):
+        cell = ws.cell(row=row_num, column=c)
+        cell.fill = HDR_FILL
+        cell.font = HDR_FONT
+        cell.alignment = CENTER
+        cell.border = BORDER
+
+
+def auto_col_width(ws, padding=3, min_w=10, max_w=55):
+    widths = {}
+    for row in ws.iter_rows():
+        for cell in row:
+            if cell.value is not None:
+                widths[cell.column] = max(widths.get(cell.column, 0), len(str(cell.value)))
+    for col_idx, w in widths.items():
+        ws.column_dimensions[get_column_letter(col_idx)].width = min(max(w + padding, min_w), max_w)
+
+
+def write_detail_sheet(wb, sheet_name, headers, rows):
+    ws = wb.create_sheet(sheet_name)
+    ws.freeze_panes = 'A2'
+    ws.append(headers)
+    style_header(ws, 1, len(headers))
+    ws.row_dimensions[1].height = 20
+    status_col = (headers.index('Status') + 1) if 'Status' in headers else None
+    spd_col = (headers.index('Ordered Spd(kts)') + 1) if 'Ordered Spd(kts)' in headers else None
+
+    for r_idx, row_data in enumerate(rows, start=2):
+        ws.append([row_data.get(h, '') for h in headers])
+        ws.row_dimensions[r_idx].height = 15
+        row_fill = None
+        if status_col:
+            if ws.cell(r_idx, status_col).value == 'USED':
+                row_fill = (speed_fill(ws.cell(r_idx, spd_col).value) if spd_col else None) or PASS_FILL
+            else:
+                row_fill = FAIL_FILL
+        for c in range(1, len(headers) + 1):
+            cell = ws.cell(r_idx, c)
+            cell.font = BODY_FONT
+            cell.border = BORDER
+            if row_fill:
+                cell.fill = row_fill
+            cell.alignment = RIGHT if isinstance(cell.value, (int, float)) else LEFT
+
+    if rows:
+        ref = f"A1:{get_column_letter(len(headers))}{len(rows)+1}"
+        tbl = Table(displayName=sanitize_table_name(sheet_name), ref=ref)
+        tbl.tableStyleInfo = TableStyleInfo(name='TableStyleMedium2', showRowStripes=True)
+        ws.add_table(tbl)
+    auto_col_width(ws)
+
+
+def snc_speeds(snc):
+    start, end, step = float(snc['start']), float(snc['end']), float(snc['step'])
+    if step <= 0 or end < start:
+        return [10.0, 10.5, 11.0, 11.5, 12.0, 12.5, 13.0, 13.5, 14.0]
+    n = int(round((end - start) / step)) + 1
+    return [round(start + i * step, 4) for i in range(min(n, 60))]
+
+
+def write_snc_iterations_sheet(wb, summary_rows, snc, use_norm=False):
+    ws = wb.create_sheet('SnC table - iterations')
+    speeds = snc_speeds(snc)
+    exp = f"{float(snc['exp']):g}"
+
+    for idx, row_data in enumerate(summary_rows):
+        base_col = idx * 6 + 1
+        cA, cB, cC, cD, cE = (base_col + k for k in range(5))
+        letA, letB, letC, letD = (get_column_letter(c) for c in (cA, cB, cC, cD))
+
+        ws.cell(row=1, column=cB, value='Actual').alignment = CENTER
+        ws.cell(row=1, column=cC, value='ME').alignment = CENTER
+        ws.cell(row=1, column=cD, value='AUX').alignment = CENTER
+        for c in (cB, cC, cD):
+            ws.cell(row=1, column=c).font = Font(name='Calibri', size=11)
+
+        ws.cell(row=2, column=cA, value='BALLAST').font = Font(name='Calibri', size=11)
+        ws.cell(row=3, column=cA, value='Laden').font = Font(name='Calibri', size=11)
+        for r in (2, 3):
+            for c in (cB, cC, cD):
+                ws.cell(row=r, column=c).fill = YELLOW_FILL
+                ws.cell(row=r, column=c).font = Font(name='Calibri', size=11)
+
+        cond = str(row_data.get('Condition', '')).strip().upper()
+        sow = row_data.get('Avg SOW (kts)', '')
+        me_24h = row_data.get('Avg ME /24h (MT)', '')
+        normalised = bool(use_norm and row_data.get('Avg Norm ME /24h (MT)') not in ('', None))
+        if normalised:
+            # ME is normalised to the ordered speed, so the "actual" point is (ordered speed, normalised ME)
+            sow = row_data.get('Ordered Spd(kts)', '')
+            me_24h = row_data.get('Avg Norm ME /24h (MT)')
+        tgt = 2 if cond == 'BALLAST' else 3
+        c_sow = ws.cell(row=tgt, column=cB, value=sow)
+        c_me = ws.cell(row=tgt, column=cC, value=me_24h)
+        c_aux = ws.cell(row=tgt, column=cD, value='Refer main sheet')
+        n_pts = row_data.get('GW Days (rows)', 0) or 0
+        ws.cell(row=1, column=cE, value='Data pts').alignment = CENTER
+        ws.cell(row=1, column=cE).font = Font(name='Calibri', size=11)
+        c_n = ws.cell(row=tgt, column=cE, value=n_pts)
+        c_n.alignment = CENTER
+        c_n.font = Font(name='Calibri', size=11, bold=True)
+        c_n.fill = LOW_N_FILL if n_pts < MIN_POINTS else OK_N_FILL
+        c_sow.number_format = '0.0'
+        c_me.number_format = '0.00'
+        c_aux.alignment = CENTER
+
+        vessel_lbl = row_data.get('Vessel', '')
+        ord_spd_lbl = row_data.get('Ordered Spd(kts)', '')
+        info_cell = ws.cell(row=4, column=cA,
+                            value=f"{vessel_lbl} ({cond} | Ord: {ord_spd_lbl} kts | SOW: {sow} kts | n = {n_pts}{' | ME normalised' if normalised else ''})")
+        info_cell.font = Font(name='Calibri', italic=True, bold=True, size=9, color='1F3864')
+
+        ws.merge_cells(start_row=5, start_column=cA, end_row=6, end_column=cA)
+        ws.merge_cells(start_row=5, start_column=cB, end_row=5, end_column=cC)
+        ws.merge_cells(start_row=5, start_column=cD, end_row=5, end_column=cE)
+        ws.cell(row=5, column=cA, value='SPEED')
+        ws.cell(row=5, column=cB, value='BALLAST')
+        ws.cell(row=5, column=cD, value='LADEN')
+        ws.cell(row=6, column=cB, value='ME')
+        ws.cell(row=6, column=cC, value='AUX')
+        ws.cell(row=6, column=cD, value='ME')
+        ws.cell(row=6, column=cE, value='AUX')
+
+        for r in (5, 6):
+            for c in range(cA, cE + 1):
+                cell = ws.cell(row=r, column=c)
+                cell.border = SNC_BORDER
+                cell.alignment = CENTER
+                if c == cA:
+                    cell.fill = GREY_FILL
+                    cell.font = BOLD_FONT
+                elif c in (cB, cC):
+                    cell.fill = BALLAST_FILL
+                    cell.font = BOLD_FONT if r == 6 else Font(name='Calibri', size=10)
+                else:
+                    cell.fill = LADEN_FILL
+                    cell.font = BOLD_FONT if r == 6 else Font(name='Calibri', size=10)
+
+        for i, spd in enumerate(speeds):
+            r = 7 + i
+            c_spd = ws.cell(row=r, column=cA, value=spd)
+            c_spd.number_format = '0.00'
+            c_spd.alignment = CENTER
+            c_spd.font = BODY_FONT
+            c_spd.border = SNC_BORDER
+            formulas = [
+                (cB, f"=MROUND((({letA}{r}/${letB}$2)^{exp}*${letC}$2),0.01)"),
+                (cC, f"=${letD}$2"),
+                (cD, f"=MROUND((({letA}{r}/${letB}$3)^{exp}*${letC}$3),0.01)"),
+                (cE, f"=${letD}$3"),
+            ]
+            for col, f in formulas:
+                c = ws.cell(row=r, column=col, value=f)
+                c.number_format = '0.00'
+                c.alignment = CENTER
+                c.font = BODY_FONT
+                c.border = SNC_BORDER
+
+        ws.column_dimensions[get_column_letter(cA)].width = 11
+        ws.column_dimensions[get_column_letter(cB)].width = 11
+        ws.column_dimensions[get_column_letter(cC)].width = 16
+        ws.column_dimensions[get_column_letter(cD)].width = 16
+        ws.column_dimensions[get_column_letter(cE)].width = 16
+        ws.column_dimensions[get_column_letter(base_col + 5)].width = 4
+
+
+INPUT_FILL = PatternFill('solid', fgColor='FFF2CC')
+CALC_FILL = PatternFill('solid', fgColor='E2EFDA')
+BANNER_FILL = PatternFill('solid', fgColor='1F3864')
+
+
+def _banner(ws, row, text, ncols):
+    ws.merge_cells(start_row=row, start_column=1, end_row=row, end_column=ncols)
+    c = ws.cell(row=row, column=1, value=text)
+    c.font = Font(name='Calibri', bold=True, color='FFFFFF', size=11)
+    c.fill = BANNER_FILL
+
+
+def write_fuel_model_sheets(wb, p, last):
+    """'Fuel Model' (inputs, mirrors the Fuel Consumption Estimator layout) and
+    'Normalised ME' (one live-formula row per used data row)."""
+    norm = p.get('norm') or {}
+    rows = last['norm_rows']
+    tables = last['tables']
+    fm = wb.create_sheet('Fuel Model')
+    nm = wb.create_sheet('Normalised ME')
+
+    _banner(fm, 1, 'VESSEL FUEL CONSUMPTION NORMALISATION', 5)
+    fm['A2'] = 'Yellow cells are inputs. The Normalised ME sheet recalculates when they change.'
+    fm['A2'].font = Font(name='Calibri', italic=True, size=10)
+    _banner(fm, 4, 'MODEL EXPONENTS', 5)
+    fm['A5'], fm['B5'] = 'Displacement exponent', float(norm.get('dexp') or 2 / 3)
+    fm['A6'], fm['B6'] = 'Speed exponent', float(norm.get('sexp') or 3)
+    fm['C5'] = fm['C6'] = 'Approximate assumption, change only with validated coefficients'
+    for r in (5, 6):
+        fm.cell(r, 2).fill = INPUT_FILL
+        fm.cell(r, 2).font = BOLD_FONT
+    _banner(fm, 8, 'MODEL / NOTES', 5)
+    notes = [
+        '• Normalised ME = row ME/24h × (normalisation displacement / row displacement)^displacement exponent × (ordered speed / row SOW)^speed exponent.',
+        '• Row displacement is interpolated from the vessel draft-displacement table below (marked "extrapolated" when the draft lies outside the table).',
+        '• Draft itself is not used in the formula; it only converts each row to a displacement.',
+        '• Default exponents (2/3 and 3.0) are approximate assumptions, not vessel-specific validated coefficients. Validate against sea-trial / onboard data.',
+    ]
+    for i, t in enumerate(notes):
+        fm.cell(9 + i, 1, t).font = Font(name='Calibri', size=10)
+
+    pairs = []
+    for rw in rows:
+        k = (rw['Vessel'], rw['Condition'])
+        if k not in pairs:
+            pairs.append(k)
+    pairs.sort()
+    hdr_row = 15
+    _banner(fm, hdr_row - 1, 'NORMALISATION CONDITIONS (per vessel and loading condition)', 5)
+    for j, h in enumerate(['Key', 'Vessel', 'Condition', 'Normalisation draft (m)', 'Normalisation displacement (MT)'], start=1):
+        fm.cell(hdr_row, j, h)
+    style_header(fm, hdr_row, 5)
+    first = hdr_row + 1
+    done = {}
+    for rw in rows:
+        done.setdefault((rw['Vessel'], rw['Condition']), (rw['NormDraft'], rw['NormDisp']))
+    for i, (v, c) in enumerate(pairs):
+        r = first + i
+        nd, nw = done[(v, c)]
+        fm.cell(r, 1, f'=B{r}&"|"&C{r}').font = Font(name='Calibri', size=9, color='808080')
+        fm.cell(r, 2, v)
+        fm.cell(r, 3, c)
+        fm.cell(r, 4, nd).fill = INPUT_FILL
+        fm.cell(r, 5, round(nw, 1) if nw is not None else None).fill = INPUT_FILL
+        for j in range(2, 6):
+            fm.cell(r, j).border = BORDER
+            fm.cell(r, j).font = BODY_FONT
+    last_row = first + max(len(pairs), 1) - 1
+
+    t_row = last_row + 3
+    _banner(fm, t_row - 1, 'DRAFT - DISPLACEMENT TABLES (used to give each data row a displacement)', 5)
+    for j, h in enumerate(['Vessel', 'Draft (m)', 'Displacement (MT)'], start=1):
+        fm.cell(t_row, j, h)
+    style_header(fm, t_row, 3)
+    r = t_row + 1
+    for v in sorted({pr[0] for pr in pairs}):
+        for d, w in tables.get(v, []):
+            fm.cell(r, 1, v).font = BODY_FONT
+            fm.cell(r, 2, d).font = BODY_FONT
+            fm.cell(r, 3, w).font = BODY_FONT
+            r += 1
+    fm.column_dimensions['A'].width = 38
+    fm.column_dimensions['B'].width = 22
+    fm.column_dimensions['C'].width = 14
+    fm.column_dimensions['D'].width = 26
+    fm.column_dimensions['E'].width = 32
+
+    heads = ['Vessel', 'Condition', 'File', 'Source Row', 'Timestamp', 'Ordered Spd(kts)', 'SOW (kts)',
+             'Mean Draft (m)', 'Row displacement (MT)', 'Displacement basis', 'ME /24h (MT)',
+             'Norm draft (m)', 'Norm displacement (MT)', 'Displacement factor', 'Speed factor',
+             'Normalised ME /24h (MT)']
+    nm.append(heads)
+    style_header(nm, 1, len(heads))
+    nm.row_dimensions[1].height = 32
+    for c in range(1, len(heads) + 1):
+        nm.cell(1, c).alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
+    nm.freeze_panes = 'A2'
+    rng = f"'Fuel Model'!$A${first}:$E${last_row}"
+    for i, rw in enumerate(rows, start=2):
+        key = f'$A{i}&"|"&$B{i}'
+        nm.append([
+            rw['Vessel'], rw['Condition'], rw['File'], rw['Source Row'], rw['Timestamp'],
+            rw['Ordered'], rw['SOW'], rw['Draft'], round(rw['RowDisp'], 1), rw['Basis'], round(rw['ME24'], 3),
+            f'=VLOOKUP({key},{rng},4,FALSE)', f'=VLOOKUP({key},{rng},5,FALSE)',
+            f"=(M{i}/I{i})^'Fuel Model'!$B$5", f"=(F{i}/G{i})^'Fuel Model'!$B$6", f'=K{i}*N{i}*O{i}',
+        ])
+        shade = speed_fill(rw['Ordered'])
+        for c in range(1, len(heads) + 1):
+            cell = nm.cell(i, c)
+            cell.font = BODY_FONT
+            cell.border = BORDER
+            if shade:
+                cell.fill = shade
+            cell.alignment = RIGHT if c >= 6 else LEFT
+        if rw['Basis'] == 'extrapolated':
+            nm.cell(i, 10).fill = LOW_N_FILL
+        for c, f in ((14, '0.0000'), (15, '0.0000'), (16, '0.000')):
+            nm.cell(i, c).number_format = f
+        nm.cell(i, 16).font = BOLD_FONT
+        nm.cell(i, 9).number_format = '#,##0'
+        nm.cell(i, 13).number_format = '#,##0'
+    widths = [16, 11, 24, 10, 17, 12, 10, 12, 14, 14, 12, 12, 16, 13, 11, 16]
+    for j, w in enumerate(widths, start=1):
+        nm.column_dimensions[get_column_letter(j)].width = w
+
+
+def write_settings_sheet(wb, p, ov, detail_rows):
+    ws = wb.create_sheet('Filter Settings')
+    rows = [
+        ('Setting', 'Value'),
+        ('Generated', datetime.now().strftime('%d %b %Y %H:%M')),
+        ('Report types included', ', '.join(sorted(p['report_types']))),
+        ('Conditions included', ', '.join(sorted(p['conditions']))),
+        ('Wind limit (kts)', f"< {p['wind']:g}"),
+        ('Wave limit (m)', f"< {p['wave']:g}"),
+        ('Minimum duration (h)', f">= {p['min_dur']:g}"),
+        ('Draft handling in averages', (f"Separate by unique draft (step {p.get('draft_step') or 0.1:g} m)" if p.get('split_draft') else 'Average draft per ordered speed')),
+        ('ME normalisation', ('On: displacement exponent %g, speed exponent %g, SnC uses normalised ME: %s' % (
+            float((p.get('norm') or {}).get('dexp') or 2 / 3), float((p.get('norm') or {}).get('sexp') or 3),
+            'yes' if (p.get('norm') or {}).get('use_in_snc') else 'no')) if (p.get('norm') or {}).get('enabled') else 'Off'),
+        ('SnC speed grid (kts)', f"{p['snc']['start']} to {p['snc']['end']} step {p['snc']['step']}"),
+        ('SnC speed-power exponent', f"{float(p['snc']['exp']):g}"),
+        ('Manually excluded rows', sum(1 for d in detail_rows if d['Override'] == 'Manually excluded')),
+        ('Manually included rows', sum(1 for d in detail_rows if d['Override'].startswith('Manually included'))),
+    ]
+    for r in rows:
+        ws.append(list(r))
+    style_header(ws, 1, 2)
+    for r in range(2, len(rows) + 1):
+        for c in (1, 2):
+            ws.cell(r, c).font = BODY_FONT
+            ws.cell(r, c).border = BORDER
+    ov_rows = [d for d in detail_rows if d['Override']]
+    if ov_rows:
+        ws.append([])
+        start = ws.max_row + 1
+        hdr = ['Vessel', 'File', 'Source Row', 'Timestamp', 'Override']
+        ws.append(hdr)
+        style_header(ws, start, len(hdr))
+        for d in ov_rows:
+            ws.append([d['Vessel'], d['File'], d['Source Row'], d['Timestamp'], d['Override']])
+    auto_col_width(ws)
+
+
+def build_xlsx_b64():
+    last = STATE['last']
+    if not last:
+        return ''
+    p, ov = last['params'], last['overrides']
+    summary_rows, detail_rows = last['summary'], last['detail']
+
+    wb = openpyxl.Workbook()
+    wb.remove(wb.active)
+
+    res_hdrs = [
+        'Vessel', 'Condition', 'Avg Mean Draft (m)', 'Ordered Spd(kts)', 'Avg SOW (kts)',
+        'GW Days (rows)', 'Total Dur (h)', 'ME (MT)', 'AE (MT)',
+        'Avg ME /24h (MT)', 'Avg AE /24h (MT)', 'Avg ME+AE /24h',
+        'BOIL (MT)', 'Avg BOIL /24h (MT)',
+    ]
+    if p.get('split_draft'):
+        res_hdrs.insert(res_hdrs.index('Avg Mean Draft (m)'), 'Draft Group (m)')
+    norm_on = bool((p.get('norm') or {}).get('enabled'))
+    if norm_on:
+        i = res_hdrs.index('Avg ME /24h (MT)') + 1
+        res_hdrs[i:i] = ['Avg Norm ME /24h (MT)', 'Norm Data pts']
+    ws = wb.create_sheet('Results')
+    ws.freeze_panes = 'A4'
+    ws.merge_cells(f"A1:{get_column_letter(len(res_hdrs))}1")
+    ws['A1'] = f"S&C Extraction Results — Generated {datetime.now().strftime('%d %b %Y %H:%M')}"
+    ws['A1'].font = Font(name='Calibri', bold=True, size=14, color='1F3864')
+    ws['A1'].alignment = CENTER
+    ws.row_dimensions[1].height = 28
+
+    n_out = sum(1 for d in detail_rows if d['Override'] == 'Manually excluded')
+    n_in = sum(1 for d in detail_rows if d['Override'].startswith('Manually included'))
+    ws.merge_cells(f"A2:{get_column_letter(len(res_hdrs))}2")
+    ws['A2'] = (
+        f"Filters: Report Type = {', '.join(sorted(p['report_types']))} | Wind < {p['wind']:g} kts | "
+        f"Wave < {p['wave']:g} m | Duration >= {p['min_dur']:g} h | "
+        f"Manual: {n_out} excluded, {n_in} included | "
+        "ME+AE includes ME (PROP) + AE (GEN) consumption"
+    )
+    ws['A2'].font = Font(name='Calibri', italic=True, size=9, color='595959')
+    ws['A2'].alignment = CENTER
+    ws.row_dimensions[2].height = 15
+
+    ws.append(res_hdrs)
+    style_header(ws, 3, len(res_hdrs))
+    ws.row_dimensions[3].height = 20
+    for r_idx, row_data in enumerate(summary_rows, start=4):
+        ws.append([row_data.get(h, '') for h in res_hdrs])
+        ws.row_dimensions[r_idx].height = 16
+        row_fill = speed_fill(row_data.get('Ordered Spd(kts)')) or PatternFill('solid', fgColor='FFFFFF')
+        for c in range(1, len(res_hdrs) + 1):
+            cell = ws.cell(r_idx, c)
+            cell.font = BODY_FONT
+            cell.border = BORDER
+            cell.fill = row_fill
+            cell.alignment = RIGHT if isinstance(cell.value, (int, float)) else LEFT
+        n_cell = ws.cell(r_idx, res_hdrs.index('GW Days (rows)') + 1)
+        if (n_cell.value or 0) < MIN_POINTS:
+            n_cell.fill = LOW_N_FILL
+        ws.cell(r_idx, len(res_hdrs)).font = BOLD_FONT
+    if summary_rows:
+        ref = f"A3:{get_column_letter(len(res_hdrs))}{len(summary_rows)+3}"
+        tbl = Table(displayName='Results', ref=ref)
+        tbl.tableStyleInfo = TableStyleInfo(name='TableStyleMedium2', showRowStripes=True)
+        ws.add_table(tbl)
+    auto_col_width(ws)
+
+    write_snc_iterations_sheet(wb, summary_rows, p['snc'],
+                               use_norm=norm_on and bool((p.get('norm') or {}).get('use_in_snc')))
+    if norm_on:
+        write_fuel_model_sheets(wb, p, last)
+
+    detail_hdrs = [
+        'File', 'Vessel', 'Source Row', 'Timestamp', 'Report Type', 'Condition',
+        'Mean Draft (m)', 'Ordered Spd(kts)', 'SOG (kts)', 'Current Factor', 'SOW (kts)',
+        'Duration (h)', 'Wind Kts', 'Wave M',
+        'ME (MT)', 'AE (MT)', 'ME+AE (MT)',
+        'ME /24h', 'AE /24h', 'ME+AE /24h',
+        'BOIL (MT)', 'BOIL /24h', 'Status', 'Override', 'Rejection Reason',
+    ]
+    used = [r for r in detail_rows if r['Status'] == 'USED']
+    write_detail_sheet(wb, 'Used Lines',
+                       [h for h in detail_hdrs if h != 'Rejection Reason'], used)
+    rejected = [r for r in detail_rows if r['Status'] == 'REJECTED']
+    write_detail_sheet(wb, 'Rejected Lines', [
+        'File', 'Vessel', 'Source Row', 'Timestamp', 'Report Type', 'Condition',
+        'Mean Draft (m)', 'Ordered Spd(kts)', 'SOG (kts)', 'Current Factor', 'SOW (kts)',
+        'Duration (h)', 'Wind Kts', 'Wave M', 'Status', 'Override', 'Rejection Reason',
+    ], rejected)
+    write_detail_sheet(wb, 'All Lines', detail_hdrs, detail_rows)
+    write_settings_sheet(wb, p, ov, detail_rows)
+
+    buf = io.BytesIO()
+    wb.save(buf)
+    return base64.b64encode(buf.getvalue()).decode('ascii')
+
+</script>
+
+<script>
+(function(){
+'use strict';
+const $ = s => document.querySelector(s);
+const COL = {BALLAST:'#2E75B6', LADEN:'#ED7D31'};
+// light shade per ordered speed (same index rule as the Excel output) and a darker line colour
+const PAL  = ['#FDE9D9','#E2EFDA','#DDEBF7','#FFF2CC','#EADCF4','#D9F0EE','#FCE4EC','#EDEDED','#E4F1C9','#D6E4F5','#FBE5C8','#E8E1F7'];
+const PALD = ['#D2691E','#4C9A2A','#2F6FB5','#B38600','#8E5BB5','#1A9A8A','#D6457A','#6f6f6f','#7FA21A','#3A6EA5','#C9732A','#6B5AAE'];
+const pidx = v => (((Math.round(Number(v)*2)) % 12) + 12) % 12;
+const LOW_N = 3;
+const S = {files:[], vessels:[], types:[], selTypes:new Set(), selConds:new Set(['BALLAST','LADEN']),
+           rows:[], summary:[], ov:{}, vessel:null, cond:'ALL', view:'speed', show:'pass',
+           norm:{on:false, snc:true, v:{}, open:new Set([0])}};
+let py = null, fn = null, enginePromise = null, charts = [];
+
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const num = (v,d=2) => (v===null||v===undefined||v===''||isNaN(v)) ? '–' : Number(v).toFixed(d);
+
+/* ── Engine ───────────────────────────────────────────────────────────── */
+function setStatus(t, cls){ const e=$('#engine-status'); e.textContent=t; e.className=cls||''; }
+async function startEngine(){
+  try{
+    if(typeof loadPyodide!=='function') throw new Error('Pyodide script could not be loaded (check your internet connection).');
+    setStatus('Loading Python engine…');
+    py = await loadPyodide({indexURL: 'https://cdn.jsdelivr.net/pyodide/v0.26.4/full/'});
+    setStatus('Installing openpyxl…');
+    await py.loadPackage('micropip');
+    await py.pyimport('micropip').install('openpyxl');
+    py.runPython($('#engine').textContent);
+    fn = {
+      load: py.globals.get('load_file'), run: py.globals.get('run'),
+      meta: py.globals.get('meta'), build: py.globals.get('build_xlsx_b64'),
+      remove: py.globals.get('remove_file'), reset: py.globals.get('reset_all')
+    };
+    setStatus('Engine ready','ready');
+  }catch(e){
+    console.error(e);
+    const framed = window.self !== window.top, local = location.protocol === 'file:';
+    setStatus('Engine failed to start','err');
+    const h = $('#engine-help');
+    h.style.display = 'block';
+    h.innerHTML = '<b>The Python engine could not start.</b> ' +
+      (framed ? 'This page is running inside a preview frame, which blocks WebAssembly. ' : '') +
+      (local ? 'This page was opened as a local file. ' : '') +
+      'Open it in a normal browser tab from your GitHub Pages link (or run <code>python -m http.server</code> in the folder and open <code>http://localhost:8000</code>), then reload. ' +
+      '<br><small>Details: ' + esc(e && e.message ? e.message : String(e)) + '</small>';
+    throw e;
+  }
+}
+enginePromise = startEngine();
+
+/* ── Upload ───────────────────────────────────────────────────────────── */
+const drop = $('#drop'), fileInput = $('#file');
+drop.addEventListener('click', () => fileInput.click());
+['dragenter','dragover'].forEach(ev => drop.addEventListener(ev, e => {e.preventDefault(); drop.classList.add('over');}));
+['dragleave','drop'].forEach(ev => drop.addEventListener(ev, e => {e.preventDefault(); drop.classList.remove('over');}));
+drop.addEventListener('drop', e => addFiles([...e.dataTransfer.files]));
+fileInput.addEventListener('change', () => { addFiles([...fileInput.files]); fileInput.value=''; });
+
+async function addFiles(list){
+  list = list.filter(f => /\.(xlsx|xlsm)$/i.test(f.name));
+  if(!list.length){ alert('Please choose .xlsx files.'); return; }
+  try{ await enginePromise; }catch(e){ return; }
+  setStatus('Reading files…');
+  for(const f of list){
+    const path = '/tmp/in_' + Date.now() + '.xlsx';
+    try{
+      const buf = new Uint8Array(await f.arrayBuffer());
+      py.FS.writeFile(path, buf);
+      const res = JSON.parse(fn.load(path, f.name));
+      S.files = S.files.filter(x => x.file !== f.name);
+      S.files.push(res);
+      py.FS.unlink(path);
+    }catch(e){ S.files.push({file:f.name, error:e.message, vessels:[], warnings:[], rows:0}); }
+    await new Promise(r => setTimeout(r));
+  }
+  setStatus('Engine ready','ready');
+  refreshMeta(); renderFiles(); recompute();
+}
+
+function refreshMeta(){
+  const m = JSON.parse(fn.meta());
+  const firstTime = S.types.length === 0;
+  S.vessels = m.vessels;
+  S.hydro = m.hydro || {};
+  // Auto-populate draft-displacement tables and targets from sheet data when not already customized
+  S.vessels.forEach(v => {
+    const h = S.hydro[v];
+    if(!h) return;
+    const cur = S.norm.v[v];
+    const isBlank = !cur || cur.tbl.every(r => r.d==='' && r.w==='');
+    if(isBlank){
+      S.norm.v[v] = {
+        tbl: h.tbl.map(r => ({d: r.d!=='' ? String(r.d) : '', w: r.w!=='' ? String(r.w) : ''})),
+        ballast: {d: h.ballast.d!=='' ? String(h.ballast.d) : '', w: h.ballast.w!=='' ? String(h.ballast.w) : ''},
+        laden: {d: h.laden.d!=='' ? String(h.laden.d) : '', w: h.laden.w!=='' ? String(h.laden.w) : ''},
+        has_disp: h.has_disp
+      };
+    }
+  });
+  const prev = new Set(S.types);
+  S.types = m.report_types;
+  if(firstTime || S.selTypes.size === 0){
+    S.selTypes = new Set(S.types.includes('At Sea') ? ['At Sea'] : S.types);
+  } else {
+    S.selTypes = new Set([...S.selTypes].filter(t => S.types.includes(t)));
+    S.types.forEach(t => { if(!prev.has(t) && t==='At Sea') S.selTypes.add(t); });
+  }
+  if(!S.vessels.includes(S.vessel)) S.vessel = S.vessels[0] || null;
+  renderTypeChips(); renderNorm();
+}
+
+function renderFiles(){
+  const el = $('#files');
+  el.innerHTML = S.files.map((f,i) => `
+    <div class="file">
+      <span class="nm">${esc(f.file)}</span>
+      ${f.error ? `<span class="err">${esc(f.error)}</span>` :
+        `<span class="chip">${f.rows} rows</span>` + f.vessels.map(v=>`<span class="chip">${esc(v)}</span>`).join('')}
+      ${(f.warnings||[]).map(w=>`<span class="warn">⚠ ${esc(w)}</span>`).join('')}
+      ${(!f.error && !f.vessels.length) ? '<span class="warn">⚠ No "Raw Detail" sheets with the required columns found</span>' : ''}
+      <button class="x" data-i="${i}" title="Remove file">✕</button>
+    </div>`).join('');
+  el.querySelectorAll('.x').forEach(b => b.onclick = () => {
+    const f = S.files[+b.dataset.i];
+    fn.remove(f.file); S.files.splice(+b.dataset.i,1);
+    S.ov = Object.fromEntries(Object.entries(S.ov).filter(([k]) => !k.startsWith(f.file+'|')));
+    refreshMeta(); renderFiles(); recompute();
+  });
+}
+
+/* ── Filters ──────────────────────────────────────────────────────────── */
+function renderTypeChips(){
+  const el = $('#typechips');
+  el.innerHTML = S.types.map(t => `<label class="${S.selTypes.has(t)?'on':''}"><input type="checkbox" value="${esc(t)}" ${S.selTypes.has(t)?'checked':''}>${esc(t)}</label>`).join('');
+  el.querySelectorAll('input').forEach(i => i.onchange = () => {
+    i.checked ? S.selTypes.add(i.value) : S.selTypes.delete(i.value);
+    i.parentElement.classList.toggle('on', i.checked); schedule();
+  });
+}
+$('#condchips').querySelectorAll('input').forEach(i => i.onchange = () => {
+  i.checked ? S.selConds.add(i.value) : S.selConds.delete(i.value);
+  i.parentElement.classList.toggle('on', i.checked); schedule();
+});
+['wind','wave','mindur','snc-start','snc-end','snc-step','snc-exp','dstep'].forEach(id => $('#'+id).addEventListener('input', schedule));
+$('#draftgrp').addEventListener('change', () => { $('#dstepwrap').style.display = $('#draftgrp').value==='split' ? '' : 'none'; schedule(); });
+$('#resetFilters').onclick = () => {
+  $('#mindur').value = 12; $('#snc-start').value=10; $('#snc-end').value=14; $('#snc-step').value=0.5; $('#snc-exp').value=2.6;
+  S.selConds = new Set(['BALLAST','LADEN']);
+  $('#condchips').querySelectorAll('input').forEach(i => {i.checked=true; i.parentElement.classList.add('on');});
+  S.selTypes = new Set(S.types.includes('At Sea') ? ['At Sea'] : S.types);
+  renderTypeChips(); schedule();
+};
+
+const fnum = id => { const v = $('#'+id).value; return v==='' ? NaN : parseFloat(v); };
+function weatherOK(){ const w=fnum('wind'), v=fnum('wave'); return Number.isFinite(w) && w>0 && Number.isFinite(v) && v>0; }
+function getParams(){
+  const md = fnum('mindur');
+  return {
+    wind: fnum('wind'), wave: fnum('wave'), min_dur: Number.isFinite(md) ? md : 12,
+    report_types: [...S.selTypes], conditions: [...S.selConds],
+    snc: { start: fnum('snc-start')||10, end: fnum('snc-end')||14, step: fnum('snc-step')||0.5, exp: fnum('snc-exp')||2.6 },
+    split_draft: $('#draftgrp').value === 'split', draft_step: fnum('dstep') || 0.1,
+    norm: normParams()
+  };
+}
+
+let tmr = null;
+function schedule(){ clearTimeout(tmr); tmr = setTimeout(recompute, 150); }
+function recompute(){
+  const ok = weatherOK();
+  $('#wind').classList.toggle('ok', Number.isFinite(fnum('wind')) && fnum('wind')>0);
+  $('#wave').classList.toggle('ok', Number.isFinite(fnum('wave')) && fnum('wave')>0);
+  if(fn && S.files.length && ok){
+    const res = JSON.parse(fn.run(JSON.stringify(getParams()), JSON.stringify(S.ov)));
+    S.rows = res.rows; S.summary = res.summary;
+  } else { S.rows = []; S.summary = []; }
+  renderAll();
+}
+
+/* ── Rendering ────────────────────────────────────────────────────────── */
+function renderAll(){
+  const has = S.files.length > 0, ok = weatherOK();
+  $('#filters').style.display = has ? '' : 'none';
+  $('#lock').style.display = (has && !ok) ? 'block' : 'none';
+  $('#workspace').style.display = (has && ok) ? '' : 'none';
+  const p = getParams();
+  $('#rule').innerHTML = ok
+    ? `A row is <b>used</b> when: report type ∈ {${esc(p.report_types.join(', ')||'none')}} · wind &lt; <b>${p.wind}</b> kts · wave &lt; <b>${p.wave}</b> m · duration ≥ <b>${p.min_dur}</b> h · ordered speed present · condition ∈ {${esc(p.conditions.join(', ')||'none')}}`
+    : 'Enter wind and wave limits to continue.';
+  $('#download').disabled = !(has && ok && S.rows.length);
+  if(!(has && ok)){ $('#barinfo').textContent = has ? 'Enter wind and wave limits to enable the output.' : 'Upload a file to begin.'; destroyCharts(); return; }
+
+  const sel = $('#vessel');
+  sel.innerHTML = S.vessels.map(v => `<option ${v===S.vessel?'selected':''}>${esc(v)}</option>`).join('');
+  renderStats(); renderCharts(); renderTable(); renderSummary(); renderBar();
+}
+
+function vrows(){ return S.rows.filter(r => r.vessel === S.vessel); }
+
+function renderStats(){
+  const v = vrows();
+  const pass = v.filter(r => r.natural==='USED').length;
+  const used = v.filter(r => r.status==='USED').length;
+  const out = v.filter(r => r.override==='out').length;
+  const inn = v.filter(r => r.override==='in').length;
+  const item = (n,l) => `<div class="stat"><b>${n}</b><span>${l}</span></div>`;
+  const nrm = v.filter(r => r.status==='USED' && r.nme!=null).length;
+  $('#stats').innerHTML = item(v.length,'rows in file') + item(pass,'passed filters') + item(out,'excluded by you') +
+                          item(inn,'force-included') + item(used,'used in output') +
+                          (S.norm.on ? item(`${nrm}/${used}`,'used rows normalised') : '');
+}
+
+function renderBar(){
+  const used = S.rows.filter(r => r.status==='USED').length;
+  const man = S.rows.filter(r => r.override).length;
+  const nv = new Set(S.rows.filter(r => r.status==='USED').map(r => r.vessel)).size;
+  $('#barinfo').innerHTML = `<b>${used}</b> rows used across <b>${nv}</b> vessel(s) · <b>${man}</b> manual change(s) · covers all uploaded vessels`;
+}
+
+/* table */
+function avgMap(){
+  const m = {};
+  S.summary.forEach(s => m[s.GID] = s['Avg ME /24h (MT)']);
+  return m;
+}
+function tableRows(){
+  let r = vrows().filter(x => S.cond==='ALL' || x.cond===S.cond);
+  if(S.show==='pass') r = r.filter(x => x.natural==='USED');
+  else if(S.show==='rej') r = r.filter(x => x.natural==='REJECTED');
+  return r;
+}
+function renderTable(){
+  const multi = S.files.length > 1;
+  $('#tbl thead').innerHTML = `<tr><th class="c">Use</th>${multi?'<th class="l">File</th>':''}<th>Row</th><th class="l">Timestamp</th><th class="l">Cond</th>
+    <th>Ord spd</th><th>SOW</th><th>Draft</th><th>Dur h</th><th>Wind</th><th>Wave</th><th>ME /24h</th><th>Δ vs avg</th>${S.norm.on?'<th>Row disp (MT)</th><th>Norm ME</th>':''}<th class="l">Status</th></tr>`;
+  const am = avgMap(), rows = tableRows(), LIMIT = 1500;
+  const html = rows.slice(0, LIMIT).map(r => {
+    const cls = r.override==='out' ? 'man-out' : r.override==='in' ? 'man-in' : r.status==='USED' ? 'used' : 'rej';
+    const disabled = !(r.natural==='USED' || r.eligible);
+    let delta = '–', dcls = '';
+    const avg = am[r.gid];
+    if(r.me24!=null && avg){ const d=(r.me24-avg)/avg*100; delta=(d>0?'+':'')+d.toFixed(1)+'%'; dcls = Math.abs(d)>=10 ? (d>0?'dpos':'dneg') : ''; }
+    const stat = r.override==='out' ? 'Excluded by you' : r.override==='in' ? 'Force-included' : r.status==='USED' ? 'Used' : r.reason;
+    const bg = (cls==='used' && r.ospd!=null) ? ` style="--rowbg:${PAL[pidx(r.ospd)]}"` : '';
+    return `<tr class="${cls}"${bg} data-key="${esc(r.key)}"><td class="c"><input type="checkbox" data-key="${esc(r.key)}" ${r.status==='USED'?'checked':''} ${disabled?'disabled':''}></td>
+      ${multi?`<td class="l">${esc(r.file)}</td>`:''}<td>${r.row}</td><td class="l">${esc(r.ts)}</td><td class="l">${r.cond==='LADEN'?'Laden':'Ballast'}</td>
+      <td>${num(r.ospd,1)}</td><td>${num(r.sow,2)}</td><td>${num(r.draft,2)}</td><td>${num(r.dur,1)}</td><td>${esc(r.wind)}</td><td>${esc(r.wave)}</td>
+      <td>${num(r.me24,2)}</td><td class="${dcls}">${delta}</td>${S.norm.on?`<td title="${esc(r.nnote||'')}">${r.rdisp!=null?Math.round(r.rdisp).toLocaleString()+(r.rbasis==='extrapolated'?' ⚠':''):'–'}</td><td title="${esc(r.nnote||'')}"><b>${num(r.nme,2)}</b></td>`:''}<td class="reason">${esc(stat)}</td></tr>`;
+  }).join('');
+  $('#tbl tbody').innerHTML = html || `<tr><td colspan="16" class="l" style="padding:16px">No rows to show.</td></tr>`;
+  $('#tnote').textContent = rows.length > LIMIT ? `Showing the first ${LIMIT} of ${rows.length} rows, narrow with the Condition / Show filters.` : `${rows.length} row(s) shown.`;
+}
+$('#tbl tbody').addEventListener('change', e => {
+  if(e.target.matches('input[type=checkbox]')) setInclude(e.target.dataset.key, e.target.checked);
+  commit();
+});
+function setInclude(key, want){
+  const r = S.rows.find(x => x.key===key); if(!r) return;
+  if(!(r.natural==='USED' || r.eligible)) return;
+  const nat = r.natural==='USED';
+  if(want === nat) delete S.ov[key]; else S.ov[key] = want ? 'in' : 'out';
+}
+function commit(){ recompute(); }
+$('#tickAll').onclick = () => { tableRows().forEach(r => setInclude(r.key, true)); commit(); };
+$('#untickAll').onclick = () => { tableRows().forEach(r => setInclude(r.key, false)); commit(); };
+$('#resetOv').onclick = () => { S.ov = {}; commit(); };
+
+$('#vessel').onchange = e => { S.vessel = e.target.value; renderAll(); };
+$('#condview').onchange = e => { S.cond = e.target.value; renderAll(); };
+$('#tshow').onchange = e => { S.show = e.target.value; renderTable(); };
+$('#viewseg').querySelectorAll('button').forEach(b => b.onclick = () => {
+  S.view = b.dataset.v;
+  $('#viewseg').querySelectorAll('button').forEach(x => x.classList.toggle('on', x===b));
+  renderCharts();
+});
+
+/* summary table */
+function renderSummary(){
+  const split = $('#draftgrp').value === 'split';
+  const s = S.summary.filter(x => x.Vessel===S.vessel && (S.cond==='ALL' || x.Condition===S.cond));
+  $('#sum thead').innerHTML = `<tr><th class="l">Condition</th><th>Ordered spd</th>${split?'<th>Draft group</th>':''}<th>Avg SOW</th><th>Avg draft</th><th>Data pts</th><th>Total dur h</th><th>Avg ME /24h</th>${S.norm.on?'<th>Avg norm ME</th><th>Norm pts</th>':''}<th>Avg AE /24h</th><th>Avg ME+AE /24h</th></tr>`;
+  $('#sum tbody').innerHTML = s.map(x => {
+    const bg = PAL[pidx(x['Ordered Spd(kts)'])], low = x['GW Days (rows)'] < LOW_N;
+    return `<tr style="--rowbg:${bg}"><td class="l" style="background:${bg}"><span class="legend-dot" style="background:${COL[x.Condition]}"></span>${x.Condition}</td>
+    <td style="background:${bg}">${num(x['Ordered Spd(kts)'],1)}</td>${split?`<td style="background:${bg}">${num(x['Draft Group (m)'],2)}</td>`:''}
+    <td style="background:${bg}">${num(x['Avg SOW (kts)'],2)}</td><td style="background:${bg}">${num(x['Avg Mean Draft (m)'],2)}</td>
+    <td style="background:${low?'#FFC7CE':bg};font-weight:${low?700:400}">${x['GW Days (rows)']}</td>
+    <td style="background:${bg}">${num(x['Total Dur (h)'],1)}</td><td style="background:${bg}"><b>${num(x['Avg ME /24h (MT)'],2)}</b></td>${S.norm.on?`<td style="background:${bg}"><b>${num(x['Avg Norm ME /24h (MT)'],2)}</b></td><td style="background:${(x['Norm Data pts']||0)<LOW_N?'#FFC7CE':bg}">${x['Norm Data pts']||0}</td>`:''}
+    <td style="background:${bg}">${num(x['Avg AE /24h (MT)'],2)}</td><td style="background:${bg}">${num(x['Avg ME+AE /24h'],2)}</td></tr>`;
+  }).join('') || `<tr><td colspan="12" class="l" style="padding:14px">No rows are currently used for this vessel.</td></tr>`;
+}
+
+/* ── Charts ───────────────────────────────────────────────────────────── */
+function destroyCharts(){ charts.forEach(c => c.destroy()); charts = []; }
+function jit(key){ let h=0; for(const c of key) h=(h*31+c.charCodeAt(0))|0; return ((Math.abs(h)%11)-5)*0.01; }
+function focusRow(key){
+  if(S.show==='rej'){ S.show='all'; $('#tshow').value='all'; renderTable(); }
+  const tr = document.querySelector(`#tbl tr[data-key="${CSS.escape(key)}"]`);
+  if(!tr) return;
+  tr.scrollIntoView({block:'center', behavior:'smooth'});
+  tr.classList.remove('flash'); void tr.offsetWidth; tr.classList.add('flash');
+}
+function onChartClick(e, _els, chart){
+  const el = chart.getElementsAtEventForMode(e, 'nearest', {intersect:true}, true)[0];
+  if(!el) return;
+  const raw = chart.data.datasets[el.datasetIndex].data[el.index];
+  if(!raw || !raw.key) return;
+  if(e.native && e.native.shiftKey){
+    const r = S.rows.find(x => x.key===raw.key);
+    if(r){ setInclude(r.key, r.status!=='USED'); commit(); }
+  } else focusRow(raw.key);
+}
+function baseOpts(xTitle, xExtra){
+  return {
+    responsive:true, maintainAspectRatio:false, animation:false, onClick:onChartClick,
+    interaction:{mode:'nearest', intersect:true},
+    plugins:{ legend:{position:'bottom', labels:{usePointStyle:true, boxWidth:8, font:{size:11}}},
+      tooltip:{callbacks:{ label: ctx => {
+        const r = ctx.raw || {}, y = ctx.parsed && ctx.parsed.y!=null ? Number(ctx.parsed.y).toFixed(2) : '';
+        return r.t ? [`${ctx.dataset.label}: ${y}`, r.t] : `${ctx.dataset.label}: ${y}`;
+      }}}},
+    scales:{ x: Object.assign({type:'linear', title:{display:true, text:xTitle}}, xExtra||{}) }
+  };
+}
+function tip(r){ return `${r.cond==='LADEN'?'Laden':'Ballast'} · ordered ${num(r.ospd,1)} kts · ${r.ts} · row ${r.row}`; }
+
+function renderCharts(){
+  destroyCharts();
+  if(typeof Chart === 'undefined') return;
+  const speedView = S.view === 'speed', split = $('#draftgrp').value === 'split';
+  const pr = S.rows.filter(r => r.vessel===S.vessel && (S.cond==='ALL'||r.cond===S.cond) &&
+                                (r.status==='USED' || r.override==='out') && r.me24!=null && r.ospd!=null);
+  const conds = ['BALLAST','LADEN'].filter(c => (S.cond==='ALL'||S.cond===c) && S.selConds.has(c));
+  const groups = S.summary.filter(s => s.Vessel===S.vessel && (S.cond==='ALL'||s.Condition===S.cond)).map(s => ({
+    cond:s.Condition, ospd:s['Ordered Spd(kts)'], me:s['Avg ME /24h (MT)'], sow:s['Avg SOW (kts)'],
+    draft:s['Avg Mean Draft (m)'], n:s['GW Days (rows)'], nme:s['Avg Norm ME /24h (MT)']}));
+  const kept = pr.filter(r => r.status==='USED'), excl = pr.filter(r => r.override==='out');
+  const useN = S.norm.on && $('#memode').value === 'norm';
+  const meY = r => useN ? r.nme : r.me24;
+
+  /* x positions */
+  let xOf, labels = [], xOpts = {}, xTitle, xMin = 0, xMax = 0;
+  if(speedView){
+    xOf = r => r.ospd + jit(r.key); xTitle = 'Ordered speed (kts)';
+    const sp = pr.map(r => r.ospd); xMin = Math.min(...sp); xMax = Math.max(...sp);
+  } else {
+    pr.sort((a,b) => a.ts<b.ts?-1 : a.ts>b.ts?1 : a.file<b.file?-1 : a.file>b.file?1 : a.row-b.row);
+    const idx = {}; pr.forEach((r,i) => { idx[r.key] = i; labels.push(r.ts); });
+    xOf = r => idx[r.key]; xTitle = 'Date (rows in time order)'; xMin = -0.5; xMax = pr.length - 0.5;
+    xOpts = {ticks:{maxTicksLimit:14, callback:v => Number.isInteger(v) && labels[v] ? labels[v].slice(0,10) : ''}};
+  }
+  const pts = (rows, yf) => rows.filter(r => yf(r)!=null && yf(r)!=='').map(r => ({x:xOf(r), y:yf(r), key:r.key, t:tip(r)}));
+  const dots = (suffix, yf) => conds.map(c => ({label:`${c} · ${suffix}`, data:pts(kept.filter(r => r.cond===c), yf),
+        backgroundColor:COL[c]+'B3', borderColor:COL[c], pointRadius:4, showLine:false}));
+
+  /* benchmark lines: one separate line per ordered speed (never joined to the next speed) */
+  const bench = (yf, name) => {
+    const gs = groups.filter(g => yf(g)!=null && yf(g)!=='');
+    if(speedView){
+      return conds.map(c => {
+        const data = [];
+        gs.filter(g => g.cond===c).forEach(g => {
+          const t = `Average of ${g.n} row(s) at ${num(g.ospd,1)} kts`;
+          data.push({x:g.ospd-0.22, y:yf(g), t, ospd:g.ospd}, {x:g.ospd+0.22, y:yf(g), t, ospd:g.ospd}, {x:g.ospd, y:null});
+        });
+        return {label:`${c} · average ${name} (per ordered speed)`, data, showLine:true, pointRadius:0, borderWidth:3,
+                borderColor:COL[c], spanGaps:false,
+                segment:{borderColor: ctx => { const d = data[ctx.p0DataIndex]; return d && d.ospd!=null ? PALD[pidx(d.ospd)] : COL[c]; }}};
+      });
+    }
+    return gs.map(g => ({
+      label:`${g.cond==='LADEN'?'Laden':'Ballast'} ${num(g.ospd,1)} kts avg ${name}${split?` @ ${num(g.draft,2)} m`:''}`,
+      data:[{x:xMin, y:yf(g), t:`Average of ${g.n} row(s)`}, {x:xMax, y:yf(g), t:`Average of ${g.n} row(s)`}],
+      showLine:true, pointRadius:0, borderWidth:2, borderDash:[7,4], borderColor:PALD[pidx(g.ospd)]}));
+  };
+
+  const mk = (id, datasets, yTitle) => {
+    const o = baseOpts(xTitle, xOpts);
+    o.scales.y = {title:{display:true, text:yTitle}};
+    charts.push(new Chart($('#'+id), {type:'scatter', data:{datasets}, options:o}));
+  };
+
+  /* 1. ME consumption */
+  const ds1 = [...dots(useN ? 'daily normalised ME' : 'daily ME', meY), ...bench(g => useN ? g.nme : g.me, useN ? 'normalised ME' : 'ME')];
+  if(excl.length) ds1.push({label:'Excluded by you', data:excl.filter(r => meY(r)!=null).map(r => ({x:xOf(r), y:meY(r), key:r.key, t:tip(r)})),
+      pointStyle:'crossRot', borderColor:'#7f7f7f', borderWidth:2, pointRadius:6, showLine:false});
+  mk('chartME', ds1, useN ? 'Normalised ME consumption (MT/day)' : 'ME consumption (MT/day)');
+
+  /* 2. SOW vs ordered speed */
+  const ds2 = [...dots('SOW', r => r.sow), ...bench(g => g.sow, 'SOW')];
+  if(speedView){
+    ds2.push({label:'SOW = ordered speed', data:[{x:xMin-0.3,y:xMin-0.3},{x:xMax+0.3,y:xMax+0.3}], showLine:true,
+              borderColor:'#9aa5b1', borderDash:[2,3], borderWidth:1, pointRadius:0});
+  } else {
+    ds2.push({label:'Ordered speed', data:pts(kept, r => r.ospd), pointStyle:'line', pointRadius:7, borderColor:'#6b4aa0', borderWidth:2, showLine:false});
+  }
+  mk('chartSOW', ds2, 'SOW / ordered speed (kts)');
+
+  /* 3. Draft */
+  mk('chartDraft', [...dots('mean draft', r => r.draft), ...bench(g => g.draft, 'draft')], 'Mean draft (m)');
+}
+
+/* ── Normalisation inputs ─────────────────────────────────────────────── */
+const pnum = t => {
+  t = String(t ?? '').trim(); if(!t) return null;
+  if(t.includes('/')){ const [a,b] = t.split('/').map(Number); return (Number.isFinite(a) && b) ? a/b : null; }
+  const x = Number(t.replace(/,/g,'')); return Number.isFinite(x) ? x : null;
+};
+function nv(v){ return S.norm.v[v] || (S.norm.v[v] = {tbl:[{d:'',w:''},{d:'',w:''}], ballast:{d:'',w:''}, laden:{d:'',w:''}}); }
+function jsTable(tbl){
+  const seen = new Set(), out = [];
+  tbl.map(r => [pnum(r.d), pnum(r.w)]).filter(r => r[0]!=null && r[1]!=null && r[1]>0).sort((a,b) => a[0]-b[0])
+     .forEach(r => { if(!seen.has(r[0])){ seen.add(r[0]); out.push(r); } });
+  return out;
+}
+function jsInterp(tb, d){
+  if(tb.length<2 || d==null) return null;
+  let i = 0;
+  if(d <= tb[0][0]) i = 0; else if(d >= tb[tb.length-1][0]) i = tb.length-2;
+  else for(i=0; i<tb.length-1; i++) if(tb[i][0]<=d && d<=tb[i+1][0]) break;
+  const [d0,w0] = tb[i], [d1,w1] = tb[i+1];
+  return w0 + (d-d0)*(w1-w0)/(d1-d0);
+}
+function normParams(){
+  const vessels = {};
+  S.vessels.forEach(v => {
+    const c = nv(v);
+    vessels[v] = {table: jsTable(c.tbl),
+      ballast:{draft:pnum(c.ballast.d), disp:pnum(c.ballast.w)}, laden:{draft:pnum(c.laden.d), disp:pnum(c.laden.w)}};
+  });
+  return {enabled:S.norm.on, dexp:pnum($('#dexp').value) || 2/3, sexp:pnum($('#sexp').value) || 3, use_in_snc:S.norm.snc, vessels};
+}
+function updateChip(vi){
+  const v = S.vessels[vi], chip = $('#nchip'+vi); if(!chip) return;
+  const c = nv(v), tb = jsTable(c.tbl), msgs = [];
+  const missingDispCount = c.tbl.filter(r => pnum(r.d)!=null && !(pnum(r.w)>0)).length;
+  if(tb.length < 2){
+    msgs.push(missingDispCount ? `enter displacement for ${missingDispCount} draft(s)` : 'needs 2+ table points');
+  } else if(missingDispCount > 0){
+    msgs.push(`${missingDispCount} draft(s) awaiting displacement`);
+  }
+  [['ballast','b','Ballast'],['laden','l','Laden']].forEach(([k,p,lbl]) => {
+    const d = pnum(c[k].d), w = pnum(c[k].w), auto = jsInterp(tb, d);
+    if(!(w>0 || auto>0)) msgs.push(lbl+' target missing');
+    const wi = document.querySelector(`#normVessels input[data-vi="${vi}"][data-t="${p}w"]`);
+    if(wi) wi.placeholder = auto ? 'auto ' + Math.round(auto).toLocaleString() : 'Enter MT';
+  });
+  chip.textContent = msgs.length ? msgs.join(' · ') : (c.has_disp ? 'auto-extracted from sheet ✓' : 'ready ✓');
+  chip.style.background = msgs.length ? '#fdecc8' : '#e3f1e4';
+}
+function renderNorm(){
+  $('#normBody').style.display = S.norm.on ? '' : 'none';
+  $('#mewrap').style.display = S.norm.on ? '' : 'none';
+  if(!S.norm.on){ return; }
+  const inp = (vi,t,val,ph,i,hl) => `<input data-vi="${vi}" data-t="${t}" ${i!=null?`data-i="${i}"`:''} value="${esc(val)}" placeholder="${ph}" inputmode="decimal" style="${hl?'border-color:#e0a21b;background:#fffbf0':''}">`;
+  $('#normVessels').innerHTML = S.vessels.map((v,vi) => {
+    const c = nv(v), h = (S.hydro && S.hydro[v]) || {};
+    const banner = h.has_disp
+      ? `<div class="rule" style="margin:6px 0 10px;background:#e3f1e4;color:#256b2a">✓ <b>Displacement detected in Excel:</b> Drafts and displacements were automatically extracted from your file.</div>`
+      : `<div class="rule" style="margin:6px 0 10px;background:#fffbf0;border:1px solid #e0a21b;color:#7a5200">⚠ <b>No Displacement column found in Excel:</b> Available drafts from your file have been pre-filled below. Please enter the corresponding <b>Displacement (MT)</b> for at least 2 drafts.</div>`;
+    return `<details class="nvessel" data-vi="${vi}" ${S.norm.open.has(vi)?'open':''}><summary><b>${esc(v)}</b> <span class="chip" id="nchip${vi}"></span></summary>
+    ${banner}
+    <div class="ngrid">
+      <div><div class="group-title">Draft – displacement table</div>
+        <table class="ntbl"><thead><tr><th>Available Draft (m)</th><th>Displacement (MT)</th><th></th></tr></thead><tbody>
+        ${c.tbl.map((r,i) => {
+          const needsW = r.d !== '' && r.w === '';
+          return `<tr><td>${inp(vi,'td',r.d,'e.g. 7.2',i,false)}</td><td>${inp(vi,'tw',r.w, needsW ? 'Enter disp for '+r.d+'m' : 'e.g. 45000',i,needsW)}</td>
+          <td><button class="x" data-act="del" data-vi="${vi}" data-i="${i}" title="Remove point">✕</button></td></tr>`;
+        }).join('')}
+        </tbody></table>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn" data-act="add" data-vi="${vi}">+ Add point</button>
+          ${(h.all_drafts && h.all_drafts.length > c.tbl.length) ? `<button class="btn" data-act="alldrafts" data-vi="${vi}" title="Load every unique draft found in the sheet">Load all ${h.all_drafts.length} unique drafts from sheet</button>` : ''}
+          <button class="btn" data-act="resetdrafts" data-vi="${vi}" title="Re-detect drafts from uploaded file">↻ Reset from sheet</button>
+        </div>
+      </div>
+      <div><div class="group-title">Normalise to (auto-filled with average drafts)</div>
+        <table class="ntbl"><thead><tr><th></th><th>Draft (m)</th><th>Displacement (MT)</th></tr></thead><tbody>
+          <tr><td>Ballast</td><td>${inp(vi,'bd',c.ballast.d,'m',null,false)}</td><td>${inp(vi,'bw',c.ballast.w,'MT',null,false)}</td></tr>
+          <tr><td>Laden</td><td>${inp(vi,'ld',c.laden.d,'m',null,false)}</td><td>${inp(vi,'lw',c.laden.w,'MT',null,false)}</td></tr>
+        </tbody></table>
+        <div class="hint">Drafts above default to the vessel's average Ballast and Laden drafts from your file. Leave displacement empty to auto-interpolate from the table on the left.</div>
+        <button class="btn" data-act="copy" data-vi="${vi}" style="margin-top:8px">Copy this vessel's setup to all vessels</button>
+      </div>
+    </div></details>`; }).join('');
+  S.vessels.forEach((_,vi) => updateChip(vi));
+}
+$('#normOn').addEventListener('change', e => {
+  S.norm.on = e.target.checked;
+  if(!S.norm.on) $('#memode').value = 'act';
+  renderNorm(); schedule();
+});
+$('#normSnc').addEventListener('change', e => { S.norm.snc = e.target.value === '1'; schedule(); });
+$('#memode').addEventListener('change', () => renderCharts());
+['dexp','sexp'].forEach(id => $('#'+id).addEventListener('input', schedule));
+$('#normVessels').addEventListener('toggle', e => {
+  const vi = +e.target.dataset.vi; if(Number.isNaN(vi)) return;
+  e.target.open ? S.norm.open.add(vi) : S.norm.open.delete(vi);
+}, true);
+$('#normVessels').addEventListener('input', e => {
+  const t = e.target.dataset.t; if(!t) return;
+  const vi = +e.target.dataset.vi, c = nv(S.vessels[vi]), val = e.target.value;
+  if(t==='td') c.tbl[+e.target.dataset.i].d = val;
+  else if(t==='tw'){
+    c.tbl[+e.target.dataset.i].w = val;
+    const needsW = c.tbl[+e.target.dataset.i].d !== '' && val.trim() === '';
+    e.target.style.borderColor = needsW ? '#e0a21b' : '';
+    e.target.style.background = needsW ? '#fffbf0' : '';
+  }
+  else if(t==='bd') c.ballast.d = val; else if(t==='bw') c.ballast.w = val;
+  else if(t==='ld') c.laden.d = val; else if(t==='lw') c.laden.w = val;
+  updateChip(vi); schedule();
+});
+$('#normVessels').addEventListener('click', e => {
+  const b = e.target.closest('button[data-act]'); if(!b) return;
+  const vName = S.vessels[+b.dataset.vi], vi = +b.dataset.vi, c = nv(vName), h = (S.hydro && S.hydro[vName]) || {};
+  if(b.dataset.act==='add') c.tbl.push({d:'',w:''});
+  else if(b.dataset.act==='del'){ c.tbl.splice(+b.dataset.i,1); if(!c.tbl.length) c.tbl.push({d:'',w:''}); }
+  else if(b.dataset.act==='alldrafts' && h.all_drafts){
+    c.tbl = h.all_drafts.map(r => ({d: String(r.d), w: r.w!=='' ? String(r.w) : ''}));
+  }
+  else if(b.dataset.act==='resetdrafts' && h.tbl){
+    S.norm.v[vName] = {
+      tbl: h.tbl.map(r => ({d: r.d!=='' ? String(r.d) : '', w: r.w!=='' ? String(r.w) : ''})),
+      ballast: {d: h.ballast.d!=='' ? String(h.ballast.d) : '', w: h.ballast.w!=='' ? String(h.ballast.w) : ''},
+      laden: {d: h.laden.d!=='' ? String(h.laden.d) : '', w: h.laden.w!=='' ? String(h.laden.w) : ''},
+      has_disp: h.has_disp
+    };
+  }
+  else if(b.dataset.act==='copy'){ S.vessels.forEach(v => { if(v !== vName) S.norm.v[v] = JSON.parse(JSON.stringify(c)); }); }
+  S.norm.open.add(vi); renderNorm(); schedule();
+});
+
+/* ── Download ─────────────────────────────────────────────────────────── */
+$('#download').onclick = () => {
+  const b64 = fn.build();
+  if(!b64){ alert('Nothing to export yet.'); return; }
+  const bin = atob(b64), u8 = new Uint8Array(bin.length);
+  for(let i=0;i<bin.length;i++) u8[i] = bin.charCodeAt(i);
+  const blob = new Blob([u8], {type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+  const d = new Date(), p2 = n => String(n).padStart(2,'0');
+  const name = `snc_output_${d.getFullYear()}${p2(d.getMonth()+1)}${p2(d.getDate())}_${p2(d.getHours())}${p2(d.getMinutes())}.xlsx`;
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name;
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+};
+
+})();
+</script>
+</body>
+</html>
