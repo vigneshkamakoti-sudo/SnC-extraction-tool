@@ -100,11 +100,7 @@ label.chk{display:flex;gap:8px;align-items:center;font-weight:600;color:var(--na
 </style>
 </head>
 <body>
-<header>
-  <div>
-    <h1>S&amp;C Extraction Tool</h1>
-    <p>Speed &amp; Consumption · ME + AE + SOW + Mean Draft · runs entirely in your browser, files are never uploaded anywhere</p>
-  </div>
+<header style="justify-content:flex-end">
   <div id="engine-status">Starting Python engine…</div>
 </header>
 
@@ -1323,6 +1319,7 @@ const S = {files:[], vessels:[], types:[], selTypes:new Set(), selConds:new Set(
            norm:{on:false, snc:true, v:{}, open:new Set([0])}};
 let py = null, fn = null, enginePromise = null, charts = [];
 
+function alert(msg){ const h=$('#engine-help'); h.style.display='block'; h.textContent=msg; setTimeout(()=>{h.style.display='none';},4000); }
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const num = (v,d=2) => (v===null||v===undefined||v===''||isNaN(v)) ? '–' : Number(v).toFixed(d);
 
